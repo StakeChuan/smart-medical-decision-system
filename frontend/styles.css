@@ -358,6 +358,27 @@ select {
   background: transparent;
 }
 
+.patient-scroll-list {
+  max-height: clamp(420px, calc(100vh - 260px), 720px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  align-content: start;
+}
+
+.patient-scroll-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.patient-scroll-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.patient-scroll-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .wide-panel {
   grid-column: 1 / -1;
 }
@@ -585,6 +606,37 @@ select:focus {
 .doctor-row-actions .danger-btn {
   width: 100%;
   min-height: 44px;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.patient-list-row {
+  grid-template-columns: minmax(0, 1fr) 210px;
+  align-items: center;
+  min-height: 112px;
+}
+
+.patient-row-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.patient-row-info strong {
+  margin-bottom: 8px;
+}
+
+.patient-row-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  justify-content: stretch;
+  align-items: stretch;
+}
+
+.patient-row-actions .ghost-btn,
+.patient-row-actions .danger-btn {
+  width: 100%;
+  min-height: 42px;
   padding: 8px 10px;
   white-space: nowrap;
 }
@@ -941,6 +993,10 @@ select:focus {
     max-height: 460px;
   }
 
+  .patient-scroll-list {
+    max-height: 500px;
+  }
+
   .filter-bar {
     grid-template-columns: 1fr 1fr;
   }
@@ -1000,6 +1056,14 @@ select:focus {
   .doctor-row-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .patient-list-row {
+    min-height: 0;
+  }
+
+  .patient-row-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -1046,6 +1110,10 @@ select:focus {
     max-height: 420px;
   }
 
+  .patient-scroll-list {
+    max-height: 440px;
+  }
+
   .nav-item.has-unread {
     padding-right: 34px;
   }
@@ -1076,6 +1144,11 @@ select:focus {
 
   .doctor-row-actions .ghost-btn,
   .doctor-row-actions .danger-btn {
+    width: 100%;
+  }
+
+  .patient-row-actions .ghost-btn,
+  .patient-row-actions .danger-btn {
     width: 100%;
   }
 

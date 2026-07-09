@@ -463,13 +463,13 @@ function renderPatients() {
       const id = patient["患者ID"] || patient.id;
       const doctorId = patient["医生ID"] || patient.doctor_id || "未绑定";
       return `
-        <div class="patient-row">
-          <div>
+        <div class="patient-row patient-list-row">
+          <div class="patient-row-info">
             <strong>${escapeHtml(patient["姓名"] || patient.name || "未命名患者")}</strong>
             <p>${escapeHtml(patient["性别"] || patient.gender || "未填")} / ${escapeHtml(patient["年龄"] || patient.age || "未填")}岁 / ${escapeHtml(patient["电话"] || patient.phone || "未填电话")}</p>
             <p>${escapeHtml(patient["地址"] || patient.address || "未填地址")} · 医生ID：${escapeHtml(doctorId)}</p>
           </div>
-          <div class="row-actions">
+          <div class="row-actions patient-row-actions">
             <button class="ghost-btn" type="button" onclick="showPatientHistory(${id})">历史</button>
             <button class="ghost-btn" type="button" onclick="editPatient(${id})">编辑</button>
             <button class="danger-btn" type="button" onclick="deletePatient(${id})">删除</button>
