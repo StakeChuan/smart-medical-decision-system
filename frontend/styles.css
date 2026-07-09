@@ -326,6 +326,38 @@ select {
   align-items: start;
 }
 
+.doctor-list-panel,
+.doctor-detail-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.doctor-scroll-list,
+.doctor-patient-scroll-list {
+  max-height: clamp(360px, calc(100vh - 260px), 680px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  align-content: start;
+}
+
+.doctor-scroll-list::-webkit-scrollbar,
+.doctor-patient-scroll-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.doctor-scroll-list::-webkit-scrollbar-thumb,
+.doctor-patient-scroll-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.doctor-scroll-list::-webkit-scrollbar-track,
+.doctor-patient-scroll-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .wide-panel {
   grid-column: 1 / -1;
 }
@@ -865,6 +897,11 @@ select:focus {
     grid-column: auto;
   }
 
+  .doctor-scroll-list,
+  .doctor-patient-scroll-list {
+    max-height: 460px;
+  }
+
   .filter-bar {
     grid-template-columns: 1fr 1fr;
   }
@@ -955,6 +992,11 @@ select:focus {
 
   .doctor-create-form {
     grid-template-columns: 1fr;
+  }
+
+  .doctor-scroll-list,
+  .doctor-patient-scroll-list {
+    max-height: 420px;
   }
 
   .nav-item.has-unread {
