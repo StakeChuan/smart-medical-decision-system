@@ -1088,18 +1088,63 @@ window.deleteConsultation = async function deleteConsultation(consultationId) {
   }
 };
 
+function getPatientField(patient, chineseKey, englishKey, fallback = "未填写") {
+  const value = patient?.[chineseKey] ?? patient?.[englishKey];
+  return value === null || value === undefined || value === "" ? fallback : value;
+}
+
+function getConsultationField(consultation, chineseKey, englishKey, fallback = "未填写") {
+  const value = consultation?.[chineseKey] ?? consultation?.[englishKey];
+  return value === null || value === undefined || value === "" ? fallback : value;
+}
+
+function renderPatientDetailSummary(patient, consultations) {
+  const name = getPatientField(patient, "姓名", "name", "患者详情");
+  const gender = getPatientField(patient, "性别", "gender");
+  const age = getPatientField(patient, "年龄", "age");
+  const phone = getPatientField(patient, "电话", "phone");
+  const address = getPatientField(patient, "地址", "address");
+  const medicalHistory = getPatientField(patient, "既往病史", "medical_history", "无");
+  const allergyHistory = getPatientField(patient, "过敏史", "allergy_history", "无");
+  const reportCount = consultations.filter((item) => getReportText(item["AI报告"] || item.ai_report)).length;
+  const latestTime = consultations[0] ? formatDateTime(consultations[0]["创建时间"] || consultations[0].created_at) : "暂无";
+
+  return `
+    <div class="patient-detail-card">
+      <div class="patient-detail-main">
+        <div>
+          <h3>${escapeHtml(name)}</h3>
+          <p>${escapeHtml(gender)} / ${escapeHtml(age)}岁 / ${escapeHtml(phone)}</p>
+          <p>${escapeHtml(address)}</p>
+        </div>
+        <div class="patient-detail-stats">
+          <div><span>问诊次数</span><strong>${consultations.length}</strong></div>
+          <div><span>AI报告</span><strong>${reportCount}</strong></div>
+          <div><span>最近问诊</span><strong>${escapeHtml(latestTime)}</strong></div>
+        </div>
+      </div>
+      <div class="patient-detail-notes">
+        <div><span>既往病史</span><p>${escapeHtml(medicalHistory)}</p></div>
+        <div><span>过敏史</span><p>${escapeHtml(allergyHistory)}</p></div>
+      </div>
+    </div>
+  `;
+}
+
 function renderPatientHistory(consultations, selector) {
   const list = $(selector);
   if (!list) return;
+  const patient = state.selectedHistoryPatient;
+  const summaryHtml = renderPatientDetailSummary(patient, consultations);
 
   if (!consultations.length) {
     list.classList.remove("history-timeline");
-    list.innerHTML = '<div class="report-empty">该患者暂无问诊记录。</div>';
+    list.innerHTML = `${summaryHtml}<div class="report-empty">该患者暂无问诊记录。</div>`;
     return;
   }
 
   list.classList.add("history-timeline");
-  list.innerHTML = consultations
+  const timelineHtml = consultations
     .map((item, index) => {
       const consultationId = item["问诊ID"] || item.id;
       const report = item["AI报告"] || item.ai_report;
@@ -1123,17 +1168,23 @@ function renderPatientHistory(consultations, selector) {
                 <button class="danger-btn" type="button" onclick="deleteConsultation(${consultationId})">删除记录</button>
               </div>
             </div>
-            <p><strong>主诉：</strong>${escapeHtml(item["主诉"] || item.chief_complaint || "未填写")}</p>
-            <p><strong>症状：</strong>${escapeHtml(item["症状"] || item.symptoms || "未填写")}</p>
-            <p><strong>现病史：</strong>${escapeHtml(item["现病史"] || item.present_illness || "未填写")}</p>
-            <p><strong>既往史：</strong>${escapeHtml(item["既往史"] || item.past_history || "未填写")}</p>
-            <p><strong>检查结果：</strong>${escapeHtml(item["检查结果"] || item.examination || "未填写")}</p>
-            <pre>${escapeHtml(reportText)}</pre>
+            <div class="history-field-grid">
+              <div><span>主诉</span><p>${escapeHtml(getConsultationField(item, "主诉", "chief_complaint"))}</p></div>
+              <div><span>症状</span><p>${escapeHtml(getConsultationField(item, "症状", "symptoms"))}</p></div>
+              <div><span>现病史</span><p>${escapeHtml(getConsultationField(item, "现病史", "present_illness"))}</p></div>
+              <div><span>既往史</span><p>${escapeHtml(getConsultationField(item, "既往史", "past_history"))}</p></div>
+              <div class="wide-history-field"><span>检查结果</span><p>${escapeHtml(getConsultationField(item, "检查结果", "examination"))}</p></div>
+            </div>
+            <div class="history-report-preview">
+              <div class="history-report-title">AI报告摘要</div>
+              <pre>${escapeHtml(reportText)}</pre>
+            </div>
           </div>
         </div>
       `;
     })
     .join("");
+  list.innerHTML = `${summaryHtml}<div class="history-timeline-list">${timelineHtml}</div>`;
 }
 
 window.copyHistoryReport = function copyHistoryReport(index) {

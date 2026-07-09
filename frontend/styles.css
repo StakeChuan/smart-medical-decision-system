@@ -683,12 +683,17 @@ select:focus {
   background: #fbfdff;
 }
 
-.history-timeline {
+.history-timeline,
+.history-timeline-list {
   position: relative;
   gap: 0;
 }
 
 .history-timeline::before {
+  content: none;
+}
+
+.history-timeline-list::before {
   content: "";
   position: absolute;
   top: 8px;
@@ -721,6 +726,98 @@ select:focus {
   border-radius: 999px;
   background: #ffffff;
   color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.patient-detail-card {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.patient-detail-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.patient-detail-main h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.patient-detail-main p {
+  margin: 6px 0;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.patient-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.patient-detail-stats div,
+.patient-detail-notes div,
+.history-field-grid div {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eef4fb;
+}
+
+.patient-detail-stats span,
+.patient-detail-notes span,
+.history-field-grid span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.patient-detail-stats strong {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.patient-detail-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.patient-detail-notes p,
+.history-field-grid p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.history-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.wide-history-field {
+  grid-column: 1 / -1;
+}
+
+.history-report-preview {
+  margin-top: 12px;
+}
+
+.history-report-title {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -1022,6 +1119,10 @@ select:focus {
   max-width: 920px;
 }
 
+#patientHistory .report-panel {
+  max-width: 1180px;
+}
+
 .report-empty,
 .report-content {
   min-height: 280px;
@@ -1119,6 +1220,12 @@ select:focus {
   .history-head {
     align-items: start;
     flex-direction: column;
+  }
+
+  .patient-detail-main,
+  .patient-detail-notes,
+  .history-field-grid {
+    grid-template-columns: 1fr;
   }
 
   .panel-actions {
@@ -1279,7 +1386,7 @@ select:focus {
     gap: 4px;
   }
 
-  .history-timeline::before {
+  .history-timeline-list::before {
     left: 14px;
   }
 
@@ -1292,6 +1399,10 @@ select:focus {
     width: 30px;
     height: 30px;
     font-size: 12px;
+  }
+
+  .patient-detail-stats {
+    grid-template-columns: 1fr;
   }
 
   .rank-item {
