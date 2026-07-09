@@ -758,14 +758,14 @@ function renderDoctors() {
       const statusText = isActive ? "启用" : "已禁用";
       const statusClass = isActive ? "active" : "disabled";
       return `
-        <div class="patient-row">
-          <div>
+        <div class="patient-row doctor-row">
+          <div class="doctor-row-info">
             <strong>${escapeHtml(getDoctorName(doctor))} <span class="status-pill ${statusClass}">${statusText}</span></strong>
             <p>医生ID：${id} · 用户名：${escapeHtml(getDoctorUsername(doctor))}</p>
             <p>患者：${doctor["患者数量"] ?? doctor.patient_count ?? 0} · 问诊：${doctor["问诊次数"] ?? doctor.consultation_count ?? 0} · 报告：${doctor["报告数量"] ?? doctor.ai_report_count ?? 0}</p>
             <p>最近问诊：${formatDateTime(doctor["最近问诊时间"] || doctor.last_consultation_time)}</p>
           </div>
-          <div class="row-actions">
+          <div class="row-actions doctor-row-actions">
             <button class="ghost-btn" type="button" onclick="selectDoctor(${id})">查看患者</button>
             <button class="ghost-btn" type="button" onclick="editDoctor(${id})">编辑</button>
             <button class="ghost-btn" type="button" onclick="resetDoctorPassword(${id})">重置密码</button>

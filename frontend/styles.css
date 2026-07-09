@@ -550,6 +550,45 @@ select:focus {
   align-items: center;
 }
 
+.doctor-row {
+  grid-template-columns: minmax(0, 1fr) 180px;
+  align-items: center;
+  min-height: 136px;
+}
+
+.doctor-row-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.doctor-row-info strong {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.doctor-row-info .status-pill {
+  margin-left: 0;
+}
+
+.doctor-row-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  justify-content: stretch;
+  align-items: stretch;
+}
+
+.doctor-row-actions .ghost-btn,
+.doctor-row-actions .danger-btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
 .rank-badge {
   width: 32px;
   height: 32px;
@@ -953,6 +992,14 @@ select:focus {
   .rank-item {
     grid-template-columns: 1fr;
   }
+
+  .doctor-row {
+    min-height: 0;
+  }
+
+  .doctor-row-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -1024,6 +1071,11 @@ select:focus {
   .panel-actions .ghost-btn,
   .row-actions .ghost-btn,
   .row-actions .danger-btn {
+    width: 100%;
+  }
+
+  .doctor-row-actions .ghost-btn,
+  .doctor-row-actions .danger-btn {
     width: 100%;
   }
 
