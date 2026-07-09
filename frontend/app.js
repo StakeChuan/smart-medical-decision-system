@@ -220,6 +220,58 @@ async function request(path, options = {}) {
   return response.json();
 }
 
+function parseDownloadFilename(disposition, fallback) {
+  const match = disposition?.match(/filename="?([^"]+)"?/i);
+  return match ? match[1] : fallback;
+}
+
+async function downloadAdminExport(type) {
+  if (!isAdmin()) {
+    toast("只有管理员可以导出数据");
+    return;
+  }
+
+  const exportNames = {
+    doctors: "admin_doctors.csv",
+    patients: "admin_patients.csv",
+    consultations: "admin_consultations.csv",
+    reports: "admin_ai_reports.csv",
+  };
+  if (!exportNames[type]) {
+    toast("未知的导出类型");
+    return;
+  }
+
+  try {
+    toast("正在生成导出文件");
+    const headers = {};
+    if (state.currentToken) {
+      headers.Authorization = `Bearer ${state.currentToken}`;
+    }
+    const response = await fetch(`${API_BASE}/admin/export/${type}`, { headers });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        logout();
+        throw new Error("登录已过期，请重新登录");
+      }
+      throw new Error(formatErrorMessage(error, response.status));
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = parseDownloadFilename(response.headers.get("Content-Disposition"), exportNames[type]);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast("导出文件已生成");
+  } catch (error) {
+    toast(error.message || "导出失败，请确认后端已启动");
+  }
+}
+
 async function checkHealth() {
   const status = $("#apiStatus");
   const backendState = $("#backendState");
@@ -1459,6 +1511,9 @@ function bindEvents() {
         await loadCurrentUser();
       }
     });
+  });
+  document.querySelectorAll("[data-export-type]").forEach((button) => {
+    button.addEventListener("click", () => downloadAdminExport(button.dataset.exportType));
   });
   $("#refreshBtn").addEventListener("click", refreshData);
   $("#loginForm").addEventListener("submit", login);

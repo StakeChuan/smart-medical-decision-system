@@ -312,6 +312,21 @@ select {
   align-items: start;
 }
 
+.export-panel {
+  margin-top: 18px;
+}
+
+.export-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.export-actions .ghost-btn {
+  width: 100%;
+  min-height: 42px;
+}
+
 .layout.two-column {
   display: grid;
   grid-template-columns: minmax(360px, 500px) 1fr;
@@ -1183,6 +1198,10 @@ select:focus {
     grid-template-columns: 1fr 1fr;
   }
 
+  .export-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .doctor-create-form {
     grid-template-columns: 1fr 1fr;
   }
@@ -1355,6 +1374,10 @@ select:focus {
   }
 
   .message-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .export-actions {
     grid-template-columns: 1fr;
   }
 

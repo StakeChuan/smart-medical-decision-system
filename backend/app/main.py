@@ -1,13 +1,15 @@
 import base64
+import csv
 import hashlib
 import hmac
+import io
 import json
 import os
 import time
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from openai import APIConnectionError, APIError, APITimeoutError, OpenAI
@@ -37,11 +39,31 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 
 def raise_http_error(status_code: int, detail: str) -> None:
     raise HTTPException(status_code=status_code, detail=detail)
+
+
+def format_export_datetime(value: datetime | None) -> str:
+    if not value:
+        return ""
+    return value.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def csv_export_response(filename: str, headers: list[str], rows: list[list[Any]]) -> Response:
+    buffer = io.StringIO(newline="")
+    buffer.write("\ufeff")
+    writer = csv.writer(buffer)
+    writer.writerow(headers)
+    writer.writerows(rows)
+    return Response(
+        content=buffer.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def base64_url_encode(raw_text: str) -> str:
@@ -1016,6 +1038,153 @@ def list_doctors(
     db: Session = Depends(get_db),
 ):
     return get_doctor_stats(db=db)
+
+
+@app.get("/admin/export/doctors", summary="导出医生统计数据", tags=["数据导出"])
+def export_doctors(
+    _: models.User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    doctors = get_doctor_stats(db=db, sort_by="doctor_id", sort_order="asc")
+    rows = [
+        [
+            doctor["doctor_id"],
+            doctor["username"],
+            doctor.get("real_name") or "",
+            "启用" if doctor.get("is_active") else "已禁用",
+            doctor.get("patient_count", 0),
+            doctor.get("consultation_count", 0),
+            doctor.get("ai_report_count", 0),
+            format_export_datetime(doctor.get("last_consultation_time")),
+        ]
+        for doctor in doctors
+    ]
+    return csv_export_response(
+        "admin_doctors.csv",
+        ["医生ID", "用户名", "医生姓名", "账号状态", "患者数量", "问诊次数", "AI报告数量", "最近问诊时间"],
+        rows,
+    )
+
+
+@app.get("/admin/export/patients", summary="导出患者数据", tags=["数据导出"])
+def export_patients(
+    _: models.User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    rows = (
+        db.query(models.Patient, models.User.username, models.User.real_name)
+        .outerjoin(models.User, models.Patient.doctor_id == models.User.id)
+        .order_by(models.Patient.id.asc())
+        .all()
+    )
+    export_rows = [
+        [
+            patient.id,
+            patient.name,
+            patient.gender or "",
+            patient.age if patient.age is not None else "",
+            patient.phone or "",
+            patient.address or "",
+            patient.doctor_id or "",
+            real_name or username or "",
+            patient.medical_history or "",
+            patient.allergy_history or "",
+            format_export_datetime(patient.created_at),
+        ]
+        for patient, username, real_name in rows
+    ]
+    return csv_export_response(
+        "admin_patients.csv",
+        ["患者ID", "姓名", "性别", "年龄", "电话", "地址", "医生ID", "所属医生", "既往病史", "过敏史", "创建时间"],
+        export_rows,
+    )
+
+
+@app.get("/admin/export/consultations", summary="导出问诊记录", tags=["数据导出"])
+def export_consultations(
+    _: models.User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    rows = (
+        db.query(
+            models.Consultation,
+            models.Patient.name.label("patient_name"),
+            models.User.username.label("doctor_username"),
+            models.User.real_name.label("doctor_real_name"),
+            models.AiReport.id.label("report_id"),
+        )
+        .join(models.Patient, models.Consultation.patient_id == models.Patient.id)
+        .outerjoin(models.User, models.Consultation.doctor_id == models.User.id)
+        .outerjoin(models.AiReport, models.AiReport.consultation_id == models.Consultation.id)
+        .order_by(models.Consultation.id.asc())
+        .all()
+    )
+    export_rows = [
+        [
+            consultation.id,
+            consultation.patient_id,
+            patient_name or "",
+            consultation.doctor_id or "",
+            doctor_real_name or doctor_username or "",
+            consultation.chief_complaint or "",
+            consultation.symptoms or "",
+            consultation.present_illness or "",
+            consultation.past_history or "",
+            consultation.examination or "",
+            "是" if report_id else "否",
+            format_export_datetime(consultation.created_at),
+        ]
+        for consultation, patient_name, doctor_username, doctor_real_name, report_id in rows
+    ]
+    return csv_export_response(
+        "admin_consultations.csv",
+        ["问诊ID", "患者ID", "患者姓名", "医生ID", "医生姓名", "主诉", "症状", "现病史", "既往史", "检查结果", "是否生成AI报告", "创建时间"],
+        export_rows,
+    )
+
+
+@app.get("/admin/export/reports", summary="导出AI报告数据", tags=["数据导出"])
+def export_reports(
+    _: models.User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    rows = (
+        db.query(
+            models.AiReport,
+            models.Consultation.patient_id.label("patient_id"),
+            models.Consultation.doctor_id.label("doctor_id"),
+            models.Patient.name.label("patient_name"),
+            models.User.username.label("doctor_username"),
+            models.User.real_name.label("doctor_real_name"),
+        )
+        .join(models.Consultation, models.AiReport.consultation_id == models.Consultation.id)
+        .join(models.Patient, models.Consultation.patient_id == models.Patient.id)
+        .outerjoin(models.User, models.Consultation.doctor_id == models.User.id)
+        .order_by(models.AiReport.id.asc())
+        .all()
+    )
+    export_rows = [
+        [
+            report.id,
+            report.consultation_id,
+            patient_id,
+            patient_name or "",
+            doctor_id or "",
+            doctor_real_name or doctor_username or "",
+            report.possible_diseases or "",
+            report.suggested_checks or "",
+            report.treatment_advice or "",
+            report.risk_warning or "",
+            report.full_report or "",
+            format_export_datetime(report.created_at),
+        ]
+        for report, patient_id, doctor_id, patient_name, doctor_username, doctor_real_name in rows
+    ]
+    return csv_export_response(
+        "admin_ai_reports.csv",
+        ["报告ID", "问诊ID", "患者ID", "患者姓名", "医生ID", "医生姓名", "可能疾病", "建议检查", "辅助建议", "风险提示", "完整报告", "创建时间"],
+        export_rows,
+    )
 
 
 @app.post("/admin/doctors", response_model=schemas.UserOut, summary="管理员新增医生", tags=["医生数据"])
