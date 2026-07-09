@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>基于大模型的智慧医疗辅助决策系统</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="loginScreen" class="login-screen">
+      <form id="loginForm" class="login-card">
+        <div class="brand login-brand">
+          <div class="brand-mark">医</div>
+          <div>
+            <h1>智慧医疗辅助决策系统</h1>
+            <p>医生工作台登录</p>
+          </div>
+        </div>
+        <label>用户名<input id="loginUsername" autocomplete="username" required /></label>
+        <label>密码<input id="loginPassword" type="password" autocomplete="new-password" required /></label>
+        <div id="loginError" class="login-error" role="alert"></div>
+        <button class="primary-btn" type="submit">登录系统</button>
+        <p class="login-tip">管理员：admin / 228460；医生：luckyizu / 228460</p>
+      </form>
+    </div>
+
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">医</div>
+          <div>
+            <h1>智慧医疗辅助决策系统</h1>
+            <p>Smart Medical Decision</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item active" data-target="dashboard">工作台</button>
+          <button class="nav-item admin-only" data-target="doctorData">医生管理</button>
+          <button class="nav-item" data-target="patients">患者管理</button>
+          <button class="nav-item" data-target="consultation">问诊录入</button>
+          <button class="nav-item" data-target="report">AI报告</button>
+          <button class="nav-item" data-target="messages">消息中心</button>
+        </nav>
+        <div class="notice">
+          <strong>安全提示</strong>
+          <span>系统输出仅供医生辅助参考，不能替代医生诊断。</span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">实训原型</p>
+            <h2 id="pageTitle">工作台</h2>
+          </div>
+          <div class="status-group">
+            <span id="currentDoctor" class="status-dot">未登录</span>
+            <span id="apiStatus" class="status-dot">后端检测中</span>
+            <button id="logoutBtn" class="ghost-btn" type="button">退出登录</button>
+            <button id="refreshBtn" class="ghost-btn" type="button">刷新数据</button>
+          </div>
+        </header>
+
+        <section id="dashboard" class="view active">
+          <div id="doctorDashboard" class="dashboard-role">
+            <div class="metrics">
+              <div class="metric">
+                <span>患者数量</span>
+                <strong id="patientCount">0</strong>
+              </div>
+              <div class="metric">
+                <span>后端状态</span>
+                <strong id="backendState">检测中</strong>
+              </div>
+              <div class="metric">
+                <span>当前角色</span>
+                <strong id="currentRole">未登录</strong>
+              </div>
+            </div>
+            <div class="workflow">
+              <div>医生登录</div>
+              <div>患者归属</div>
+              <div>问诊分析</div>
+              <div>AI报告</div>
+            </div>
+          </div>
+
+          <div id="adminDashboard" class="dashboard-role admin-dashboard" hidden>
+            <div class="metrics metrics-admin">
+              <div class="metric">
+                <span>医生总数</span>
+                <strong id="adminDoctorCount">0</strong>
+              </div>
+              <div class="metric">
+                <span>患者总数</span>
+                <strong id="adminPatientCount">0</strong>
+              </div>
+              <div class="metric">
+                <span>问诊总数</span>
+                <strong id="adminConsultationCount">0</strong>
+              </div>
+              <div class="metric">
+                <span>报告总数</span>
+                <strong id="adminReportCount">0</strong>
+              </div>
+              <div class="metric">
+                <span>今日问诊</span>
+                <strong id="adminTodayConsultationCount">0</strong>
+              </div>
+            </div>
+
+            <div class="overview-grid">
+              <div class="panel wide-panel">
+                <div class="panel-head">
+                  <h3>近 7 天问诊趋势</h3>
+                  <span>平台总览</span>
+                </div>
+                <div id="trendList" class="trend-list"></div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-head">
+                  <h3>医生排行</h3>
+                  <span id="topDoctorHint">按问诊次数</span>
+                </div>
+                <div id="topDoctorList" class="list"></div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-head">
+                  <h3>最近新增患者</h3>
+                  <span>近 5 条</span>
+                </div>
+                <div id="recentPatientList" class="list"></div>
+              </div>
+
+              <div class="panel wide-panel">
+                <div class="panel-head">
+                  <h3>活跃患者</h3>
+                  <span>最近有问诊</span>
+                </div>
+                <div id="activePatientList" class="list"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="doctorData" class="view">
+          <form id="doctorCreateForm" class="panel doctor-create-panel">
+            <div class="panel-head compact-head">
+              <h3>新增医生</h3>
+              <span>创建医生登录账号</span>
+            </div>
+            <div class="doctor-create-form">
+              <label>用户名<input id="newDoctorUsername" autocomplete="off" placeholder="例如 doctor001" required /></label>
+              <label>医生姓名<input id="newDoctorRealName" autocomplete="off" placeholder="例如 李医生" /></label>
+              <label>初始密码<input id="newDoctorPassword" type="password" autocomplete="new-password" placeholder="请输入初始密码" required /></label>
+              <button class="primary-btn compact-primary" type="submit">新增医生</button>
+            </div>
+          </form>
+
+          <div class="panel toolbar-panel">
+            <div class="panel-head compact-head">
+              <h3>医生绩效统计</h3>
+              <span>支持搜索与排序</span>
+            </div>
+            <div class="filter-bar">
+              <input id="doctorSearch" class="inline-input" placeholder="搜索医生姓名或用户名" />
+              <select id="doctorSortBy" class="inline-select">
+                <option value="consultation_count">按问诊次数</option>
+                <option value="patient_count">按患者数量</option>
+                <option value="ai_report_count">按报告数量</option>
+                <option value="last_consultation_time">按最近问诊</option>
+              </select>
+              <select id="doctorSortOrder" class="inline-select">
+                <option value="desc">降序</option>
+                <option value="asc">升序</option>
+              </select>
+              <button id="doctorFilterBtn" class="ghost-btn" type="button">查询</button>
+              <button id="doctorFilterResetBtn" class="ghost-btn" type="button">重置</button>
+            </div>
+          </div>
+
+          <div class="admin-grid">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>医生列表</h3>
+                <span id="doctorListHint">0 名医生</span>
+              </div>
+              <div id="doctorList" class="list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h3 id="doctorPatientTitle">医生患者名单</h3>
+                <span id="doctorPatientHint">点击医生查看患者</span>
+              </div>
+              <div id="doctorPatientList" class="list"></div>
+            </div>
+
+            <div class="panel wide-panel">
+              <div class="panel-head">
+                <h3 id="patientHistoryTitle">患者问诊历史</h3>
+                <span id="patientHistoryHint">请选择患者</span>
+              </div>
+              <div id="patientHistoryList" class="history-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="patientHistory" class="view">
+          <div class="panel report-panel">
+            <div class="panel-head">
+              <h3 id="doctorHistoryTitle">患者历史详情</h3>
+              <span id="doctorHistoryHint">请选择患者</span>
+            </div>
+            <div id="doctorHistoryList" class="history-list"></div>
+          </div>
+        </section>
+
+        <section id="patients" class="view">
+          <div class="layout two-column">
+            <form id="patientForm" class="panel">
+              <div class="panel-head">
+                <h3 id="patientFormTitle">新增患者</h3>
+                <button id="resetPatientBtn" class="ghost-btn" type="button">清空</button>
+              </div>
+              <input type="hidden" id="patientId" />
+              <div class="form-grid">
+                <label>姓名<input id="name" required placeholder="张三" /></label>
+                <label>性别<input id="gender" placeholder="男/女" /></label>
+                <label>年龄<input id="age" type="number" min="0" placeholder="35" /></label>
+                <label>电话<input id="phone" placeholder="13800138000" /></label>
+                <label class="wide">地址<input id="address" placeholder="北京市" /></label>
+                <label class="wide">既往病史<textarea id="medicalHistory" rows="3" placeholder="无明显既往病史"></textarea></label>
+                <label class="wide">过敏史<textarea id="allergyHistory" rows="3" placeholder="无药物过敏史"></textarea></label>
+              </div>
+              <button class="primary-btn" type="submit">保存患者</button>
+            </form>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h3>患者列表</h3>
+                <span id="patientListHint">0 条</span>
+              </div>
+              <div id="patientList" class="list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="consultation" class="view">
+          <form id="consultationForm" class="panel form-panel">
+            <div class="panel-head">
+              <h3>问诊录入</h3>
+              <span>请先在患者管理中新增患者</span>
+            </div>
+            <div class="form-grid">
+              <label class="wide">选择患者<select id="consultPatient" required></select></label>
+              <label class="wide">主诉<textarea id="chiefComplaint" rows="3" placeholder="发热、咳嗽三天"></textarea></label>
+              <label class="wide">症状<textarea id="symptoms" rows="3" placeholder="体温最高38.5℃，伴有咽痛、乏力"></textarea></label>
+              <label class="wide">现病史<textarea id="presentIllness" rows="3" placeholder="三天前受凉后出现发热和咳嗽"></textarea></label>
+              <label class="wide">既往史<textarea id="pastHistory" rows="3" placeholder="无特殊病史"></textarea></label>
+              <label class="wide">检查结果<textarea id="examination" rows="3" placeholder="咽部充血，肺部听诊未闻及明显啰音"></textarea></label>
+            </div>
+            <button class="primary-btn" type="submit">保存问诊并生成AI报告</button>
+          </form>
+        </section>
+
+        <section id="messages" class="view">
+          <div class="layout message-layout">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>消息会话</h3>
+                <span id="messageUnreadHint">未读 0 条</span>
+              </div>
+              <div class="message-toolbar">
+                <select id="messageUserSelect"></select>
+                <button id="openMessageUserBtn" class="ghost-btn" type="button">打开会话</button>
+                <button id="fetchMessagesBtn" class="ghost-btn" type="button">收取消息</button>
+              </div>
+              <div id="messageFetchStatus" class="message-status">请选择聊天对象或会话</div>
+              <div id="messageConversationList" class="list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h3 id="messagePanelTitle">消息详情</h3>
+                <span id="messagePanelHint">尚未选择会话</span>
+              </div>
+              <div id="messageList" class="message-list"></div>
+              <form id="messageForm" class="message-form">
+                <textarea id="messageInput" rows="4" maxlength="500" placeholder="输入要发送的消息"></textarea>
+                <button class="primary-btn" type="submit">发送消息</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section id="report" class="view">
+          <div class="panel report-panel">
+            <div class="panel-head">
+              <h3>AI辅助决策报告</h3>
+              <div class="panel-actions">
+                <span id="reportTime">暂无报告</span>
+                <button id="copyReportBtn" class="ghost-btn" type="button">复制报告</button>
+                <button id="printReportBtn" class="ghost-btn" type="button">打印报告</button>
+                <button id="regenerateReportBtn" class="ghost-btn" type="button">重新生成</button>
+              </div>
+            </div>
+            <div id="reportContent" class="report-empty">尚未生成报告。请先录入问诊信息。</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="./app.js"></script>
+    <script src="./messages.js"></script>
+  </body>
+</html>
