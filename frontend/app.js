@@ -49,6 +49,29 @@ function isAdmin() {
   return currentUserRole() === "admin";
 }
 
+function currentUsername() {
+  return state.currentUser ? state.currentUser["用户名"] || state.currentUser.username || "" : "";
+}
+
+function currentRealName() {
+  return state.currentUser ? state.currentUser["真实姓名"] || state.currentUser.real_name || "" : "";
+}
+
+function currentIsActive() {
+  if (!state.currentUser) return false;
+  const value = state.currentUser["是否启用"] ?? state.currentUser.is_active;
+  return value !== false && value !== 0;
+}
+
+function mergeUserWithToken(user) {
+  if (!user) return null;
+  return {
+    ...user,
+    token: state.currentToken,
+    访问令牌: state.currentToken,
+  };
+}
+
 function escapeHtml(text) {
   return String(text ?? "")
     .replaceAll("&", "&amp;")
@@ -229,6 +252,7 @@ function updateLoginState() {
     document.querySelectorAll(".admin-only").forEach((el) => {
       el.style.display = "none";
     });
+    renderSettings();
     return;
   }
 
@@ -242,6 +266,41 @@ function updateLoginState() {
   document.querySelectorAll(".admin-only").forEach((el) => {
     el.style.display = isAdmin() ? "block" : "none";
   });
+
+  renderSettings();
+}
+
+function renderSettings() {
+  const displayNameEl = $("#settingsDisplayName");
+  if (!displayNameEl) return;
+
+  if (!state.currentUser) {
+    displayNameEl.textContent = "未登录";
+    $("#settingsUsername").textContent = "用户名：-";
+    $("#settingsUserId").textContent = "-";
+    $("#settingsRole").textContent = "-";
+    $("#settingsActive").textContent = "-";
+    $("#settingsStatus").textContent = "请先登录";
+    $("#settingsAvatar").textContent = "医";
+    $("#profileRealName").value = "";
+    $("#passwordForm")?.reset();
+    return;
+  }
+
+  const username = currentUsername();
+  const realName = currentRealName();
+  const displayName = realName || username || "未命名用户";
+  const roleText = isAdmin() ? "管理员" : "医生";
+  const activeText = currentIsActive() ? "启用" : "已禁用";
+
+  displayNameEl.textContent = displayName;
+  $("#settingsUsername").textContent = `用户名：${username || "-"}`;
+  $("#settingsUserId").textContent = currentUserId() || "-";
+  $("#settingsRole").textContent = roleText;
+  $("#settingsActive").textContent = activeText;
+  $("#settingsStatus").textContent = "当前登录账号";
+  $("#settingsAvatar").textContent = roleText.slice(0, 1);
+  $("#profileRealName").value = realName;
 }
 
 async function login(event) {
@@ -267,6 +326,66 @@ async function login(event) {
       : error.message;
     setLoginError(message);
     toast(message);
+  }
+}
+
+async function loadCurrentUser() {
+  if (!state.currentUser) return;
+  const user = await request("/auth/me");
+  setCurrentSession(mergeUserWithToken(user));
+  updateLoginState();
+}
+
+async function saveProfile(event) {
+  event.preventDefault();
+  if (!state.currentUser) {
+    toast("请先登录");
+    return;
+  }
+
+  const realName = $("#profileRealName").value.trim();
+  try {
+    const user = await request("/auth/profile", {
+      method: "PUT",
+      body: JSON.stringify({ 真实姓名: realName || null }),
+    });
+    setCurrentSession(mergeUserWithToken(user));
+    updateLoginState();
+    toast("资料已保存");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function changePassword(event) {
+  event.preventDefault();
+  if (!state.currentUser) {
+    toast("请先登录");
+    return;
+  }
+
+  const oldPassword = $("#oldPassword").value.trim();
+  const newPassword = $("#newPassword").value.trim();
+  const confirmPassword = $("#confirmPassword").value.trim();
+
+  if (!oldPassword || !newPassword) {
+    toast("请填写原密码和新密码");
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    toast("两次输入的新密码不一致");
+    return;
+  }
+
+  try {
+    await request("/auth/password", {
+      method: "PUT",
+      body: JSON.stringify({ 原密码: oldPassword, 新密码: newPassword }),
+    });
+    $("#passwordForm").reset();
+    toast("密码修改成功，请牢记新密码");
+  } catch (error) {
+    toast(error.message);
   }
 }
 
@@ -1203,6 +1322,9 @@ function switchView(target) {
     $("#pageTitle").textContent = "医生管理";
   } else if (target === "dashboard" && isAdmin()) {
     $("#pageTitle").textContent = "管理看板";
+  } else if (target === "settings") {
+    $("#pageTitle").textContent = "个人中心";
+    renderSettings();
   } else {
     $("#pageTitle").textContent = navTitle || "工作台";
   }
@@ -1217,6 +1339,12 @@ async function refreshData() {
     }
 
     const currentView = document.querySelector(".view.active")?.id || "dashboard";
+    if (currentView === "settings") {
+      await loadCurrentUser();
+      toast("刷新成功");
+      return;
+    }
+
     await loadPatients();
 
     if (isAdmin()) {
@@ -1276,6 +1404,9 @@ function bindEvents() {
       if (item.dataset.target === "doctorData" && isAdmin() && !state.doctors.length) {
         await loadDoctorData();
       }
+      if (item.dataset.target === "settings" && state.currentUser) {
+        await loadCurrentUser();
+      }
     });
   });
   $("#refreshBtn").addEventListener("click", refreshData);
@@ -1284,6 +1415,8 @@ function bindEvents() {
   $("#loginPassword").addEventListener("input", () => setLoginError());
   $("#logoutBtn").addEventListener("click", () => logout(true));
   $("#doctorCreateForm")?.addEventListener("submit", createDoctor);
+  $("#profileForm")?.addEventListener("submit", saveProfile);
+  $("#passwordForm")?.addEventListener("submit", changePassword);
   $("#resetPatientBtn").addEventListener("click", resetPatientForm);
   $("#patientForm").addEventListener("submit", savePatient);
   $("#consultationForm").addEventListener("submit", saveConsultation);

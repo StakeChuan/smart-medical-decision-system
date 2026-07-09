@@ -40,6 +40,7 @@
           <button class="nav-item" data-target="consultation">问诊录入</button>
           <button class="nav-item" data-target="report">AI报告</button>
           <button class="nav-item" data-target="messages">消息中心</button>
+          <button class="nav-item" data-target="settings">个人中心</button>
         </nav>
         <div class="notice">
           <strong>安全提示</strong>
@@ -308,6 +309,62 @@
               </div>
             </div>
             <div id="reportContent" class="report-empty">尚未生成报告。请先录入问诊信息。</div>
+          </div>
+        </section>
+
+        <section id="settings" class="view">
+          <div class="settings-grid">
+            <div class="panel settings-card">
+              <div class="panel-head">
+                <h3>账号信息</h3>
+                <span id="settingsStatus">当前登录账号</span>
+              </div>
+              <div class="settings-profile">
+                <div class="settings-avatar" id="settingsAvatar">医</div>
+                <div>
+                  <h3 id="settingsDisplayName">未登录</h3>
+                  <p id="settingsUsername">用户名：-</p>
+                </div>
+              </div>
+              <div class="settings-meta">
+                <div>
+                  <span>用户ID</span>
+                  <strong id="settingsUserId">-</strong>
+                </div>
+                <div>
+                  <span>角色</span>
+                  <strong id="settingsRole">-</strong>
+                </div>
+                <div>
+                  <span>账号状态</span>
+                  <strong id="settingsActive">-</strong>
+                </div>
+              </div>
+            </div>
+
+            <form id="profileForm" class="panel settings-card">
+              <div class="panel-head">
+                <h3>资料设置</h3>
+                <span>修改系统内显示名称</span>
+              </div>
+              <div class="form-grid settings-form">
+                <label class="wide">真实姓名<input id="profileRealName" maxlength="50" autocomplete="name" placeholder="例如 李医生" /></label>
+              </div>
+              <button class="primary-btn" type="submit">保存资料</button>
+            </form>
+
+            <form id="passwordForm" class="panel settings-card wide-settings-card">
+              <div class="panel-head">
+                <h3>密码设置</h3>
+                <span>修改后请使用新密码登录</span>
+              </div>
+              <div class="form-grid">
+                <label>原密码<input id="oldPassword" type="password" autocomplete="current-password" required /></label>
+                <label>新密码<input id="newPassword" type="password" autocomplete="new-password" required /></label>
+                <label class="wide">确认新密码<input id="confirmPassword" type="password" autocomplete="new-password" required /></label>
+              </div>
+              <button class="primary-btn" type="submit">修改密码</button>
+            </form>
           </div>
         </section>
       </main>

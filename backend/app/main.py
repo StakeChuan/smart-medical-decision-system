@@ -656,6 +656,36 @@ def login(login_data: schemas.LoginRequest, db: Session = Depends(get_db)):
     return result
 
 
+@app.get("/auth/me", response_model=schemas.UserOut, summary="查看当前账号", tags=["登录系统"])
+def get_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
+
+@app.put("/auth/profile", response_model=schemas.UserOut, summary="修改当前账号资料", tags=["登录系统"])
+def update_profile(
+    profile: schemas.ProfileUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_user.real_name = profile.real_name
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@app.put("/auth/password", summary="修改当前账号密码", tags=["登录系统"])
+def change_password(
+    password_data: schemas.PasswordChange,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.password != password_data.old_password:
+        raise_http_error(status.HTTP_400_BAD_REQUEST, "原密码错误")
+    current_user.password = password_data.new_password
+    db.commit()
+    return {"message": "密码修改成功"}
+
+
 @app.get("/patients", response_model=list[schemas.PatientOut], summary="查询患者列表", tags=["患者管理"])
 def list_patients(
     doctor_id: int | None = Query(None),

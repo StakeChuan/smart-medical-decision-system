@@ -47,6 +47,28 @@ class LoginResponse(UserOut):
     token: str = Field(..., alias="访问令牌")
 
 
+class ProfileUpdate(AppBaseModel):
+    real_name: str | None = Field(None, alias="真实姓名", max_length=50)
+
+    @field_validator("real_name", mode="before")
+    @classmethod
+    def normalize_optional_text(cls, value: str | None) -> str | None:
+        return normalize_text(value)
+
+
+class PasswordChange(AppBaseModel):
+    old_password: str = Field(..., alias="原密码", min_length=1, max_length=100)
+    new_password: str = Field(..., alias="新密码", min_length=1, max_length=100)
+
+    @field_validator("old_password", "new_password", mode="before")
+    @classmethod
+    def validate_password_text(cls, value: str) -> str:
+        normalized = normalize_text(value)
+        if not normalized:
+            raise ValueError("密码不能为空")
+        return normalized
+
+
 class DoctorCreate(AppBaseModel):
     username: str = Field(..., alias="用户名", min_length=1, max_length=50)
     password: str = Field(..., alias="初始密码", min_length=1, max_length=100)
