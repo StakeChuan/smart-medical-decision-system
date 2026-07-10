@@ -20,7 +20,7 @@
         <label>密码<input id="loginPassword" type="password" autocomplete="new-password" required /></label>
         <div id="loginError" class="login-error" role="alert"></div>
         <button class="primary-btn" type="submit">登录系统</button>
-        <p class="login-tip">welcome to my world</p>
+        <p class="login-tip">管理员：admin / 228460；医生：luckyizu / 228460</p>
       </form>
     </div>
 
@@ -51,9 +51,12 @@
 
       <main class="main">
         <header class="topbar">
-          <div>
-            <p class="eyebrow">实训原型</p>
-            <h2 id="pageTitle">工作台</h2>
+          <div class="title-group">
+            <button id="globalBackBtn" class="ghost-btn back-btn" type="button" hidden>返回</button>
+            <div>
+              <p class="eyebrow">实训原型</p>
+              <h2 id="pageTitle">工作台</h2>
+            </div>
           </div>
           <div class="status-group">
             <span id="currentDoctor" class="status-dot">未登录</span>
@@ -248,14 +251,6 @@
               </div>
               <div id="doctorPatientList" class="list doctor-patient-scroll-list"></div>
             </div>
-
-            <div class="panel wide-panel">
-              <div class="panel-head">
-                <h3 id="patientHistoryTitle">患者问诊历史</h3>
-                <span id="patientHistoryHint">请选择患者</span>
-              </div>
-              <div id="patientHistoryList" class="history-list"></div>
-            </div>
           </div>
         </section>
 
@@ -314,6 +309,21 @@
               <span id="doctorHistoryHint">请选择患者</span>
             </div>
             <div id="doctorHistoryList" class="history-list"></div>
+          </div>
+        </section>
+
+        <section id="fullReportDetail" class="view">
+          <div class="panel report-panel">
+            <div class="panel-head">
+              <h3 id="fullReportTitle">完整AI报告</h3>
+              <div class="panel-actions">
+                <span id="fullReportTime">暂无报告</span>
+                <button id="copyFullReportBtn" class="ghost-btn" type="button">复制报告</button>
+                <button id="printFullReportBtn" class="ghost-btn" type="button">打印报告</button>
+                <button id="regenerateFullReportBtn" class="ghost-btn" type="button">重新生成</button>
+              </div>
+            </div>
+            <div id="fullReportContent" class="report-empty">请选择一份 AI 报告。</div>
           </div>
         </section>
 

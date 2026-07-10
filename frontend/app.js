@@ -1,18 +1,9 @@
 function resolveApiBase() {
-    const hostname = window.location.hostname;
-
-    // 本地文件打开
-    if (!hostname || window.location.protocol === "file:") {
-        return "http://127.0.0.1:8000";
-    }
-
-    // Cloudflare公网访问
-    if (hostname.includes("trycloudflare.com")) {
-        return "https://breakfast-bacteria-acid-used.trycloudflare.com";
-    }
-
-    // 局域网访问
-    return `http://${hostname}:8000`;
+  const hostname = window.location.hostname;
+  if (!hostname || window.location.protocol === "file:") {
+    return "http://127.0.0.1:8000";
+  }
+  return `http://${hostname}:8000`;
 }
 
 const API_BASE = resolveApiBase();
@@ -44,7 +35,6 @@ const state = {
   isSavingConsultation: false,
   isRegeneratingReport: false,
   regeneratingHistoryIndex: null,
-  expandedHistoryReportIndex: null,
   lastReport: null,
   lastReportConsultationId: null,
   clearReportOnNextOpen: false,
@@ -54,6 +44,13 @@ const state = {
     keyword: "",
     sortBy: "consultation_count",
     sortOrder: "desc",
+  },
+  navigationStack: [],
+  fullReportDetail: {
+    report: null,
+    consultationId: null,
+    historyIndex: null,
+    patientName: "",
   },
 };
 
@@ -164,6 +161,13 @@ function resetRuntimeState() {
   state.lastReport = null;
   state.lastReportConsultationId = null;
   state.clearReportOnNextOpen = false;
+  state.navigationStack = [];
+  state.fullReportDetail = {
+    report: null,
+    consultationId: null,
+    historyIndex: null,
+    patientName: "",
+  };
 }
 
 function logout(showToast = false) {
@@ -174,7 +178,6 @@ function logout(showToast = false) {
   renderAdminDashboard();
   renderDoctors();
   renderDoctorPatients([]);
-  renderPatientHistory([], "#patientHistoryList");
   renderPatientHistory([], "#doctorHistoryList");
   clearReport();
   switchView("dashboard");
@@ -585,18 +588,6 @@ function getReportPreviewHtml(report) {
   `;
 }
 
-function getFullReportHtml(report) {
-  if (!report) return "";
-  const fullText = report["完整报告"] || report.full_report || "";
-  return `
-    <div class="history-full-report">
-      <div class="history-report-title">完整AI报告</div>
-      ${renderStructuredReport(report)}
-      ${fullText ? `<details class="history-full-report-text"><summary>查看原始完整文本</summary><pre>${escapeHtml(fullText)}</pre></details>` : ""}
-    </div>
-  `;
-}
-
 function updateReportActions() {
   const hasReport = Boolean(getReportText(state.lastReport));
   const canRegenerate = Boolean(state.lastReportConsultationId) && !state.isRegeneratingReport;
@@ -627,6 +618,82 @@ function renderReport(report) {
   $("#reportContent").className = "report-content";
   $("#reportContent").innerHTML = renderStructuredReport(report);
   updateReportActions();
+}
+
+function getCurrentViewId() {
+  return document.querySelector(".view.active")?.id || "dashboard";
+}
+
+function updateBackButton() {
+  const backBtn = $("#globalBackBtn");
+  if (!backBtn) return;
+  const lastEntry = state.navigationStack[state.navigationStack.length - 1];
+  backBtn.hidden = !lastEntry;
+  backBtn.textContent = lastEntry?.label || "返回";
+}
+
+function clearNavigationStack() {
+  state.navigationStack = [];
+  updateBackButton();
+}
+
+function pushNavigationEntry(label) {
+  const currentView = getCurrentViewId();
+  state.navigationStack.push({
+    view: currentView,
+    label,
+  });
+  updateBackButton();
+}
+
+function goBack() {
+  const previous = state.navigationStack.pop();
+  if (!previous) return;
+  switchView(previous.view, { skipHistory: true });
+}
+
+function renderFullReportDetail() {
+  const report = state.fullReportDetail.report;
+  const consultationId = state.fullReportDetail.consultationId;
+  const patientName = state.fullReportDetail.patientName || "患者";
+  const titleEl = $("#fullReportTitle");
+  const timeEl = $("#fullReportTime");
+  const contentEl = $("#fullReportContent");
+
+  if (!report) {
+    titleEl.textContent = "完整AI报告";
+    timeEl.textContent = "暂无报告";
+    contentEl.className = "report-empty";
+    contentEl.textContent = "请选择一份 AI 报告。";
+    updateFullReportActions();
+    return;
+  }
+
+  titleEl.textContent = `${patientName} 的完整AI报告`;
+  timeEl.textContent = formatDateTime(report["创建时间"] || report.created_at || new Date());
+  contentEl.className = "report-content";
+  const fullText = report["完整报告"] || report.full_report || "";
+  contentEl.innerHTML = `
+    ${renderStructuredReport(report)}
+    ${fullText ? `<details class="full-report-raw"><summary>查看原始完整文本</summary><pre>${escapeHtml(fullText)}</pre></details>` : ""}
+  `;
+  state.lastReport = report;
+  state.lastReportConsultationId = consultationId || report["问诊ID"] || report.consultation_id || null;
+  updateFullReportActions();
+}
+
+function updateFullReportActions() {
+  const hasReport = Boolean(getReportText(state.fullReportDetail.report));
+  const canRegenerate = Boolean(state.fullReportDetail.consultationId) && !state.isRegeneratingReport;
+  const copyBtn = $("#copyFullReportBtn");
+  const printBtn = $("#printFullReportBtn");
+  const regenerateBtn = $("#regenerateFullReportBtn");
+  if (copyBtn) copyBtn.disabled = !hasReport;
+  if (printBtn) printBtn.disabled = !hasReport;
+  if (regenerateBtn) {
+    regenerateBtn.disabled = !canRegenerate;
+    regenerateBtn.textContent = state.isRegeneratingReport ? "重新生成中..." : "重新生成";
+  }
 }
 
 function renderDoctorDashboard() {
@@ -1349,10 +1416,7 @@ window.selectDoctor = async function selectDoctor(id) {
   state.selectedDoctorPatients = [];
   $("#doctorPatientTitle").textContent = `${doctor?.["医生姓名"] || doctor?.real_name || doctor?.username || "医生"} 的患者名单`;
   $("#doctorPatientHint").textContent = "点击患者查看问诊历史";
-  $("#patientHistoryTitle").textContent = "患者问诊历史";
-  $("#patientHistoryHint").textContent = "请选择患者";
   showLoading("#doctorPatientList");
-  $("#patientHistoryList").innerHTML = "";
 
   try {
     const patients = await request(`/admin/doctors/${id}/patients`);
@@ -1402,17 +1466,16 @@ window.showPatientHistory = async function showPatientHistory(patientId) {
     const consultations = await request(`/patients/${patientId}/consultations`);
     const patient = findPatientForHistory(patientId);
     const title = `${patient?.["姓名"] || patient?.name || `患者ID ${patientId}`} 的问诊历史`;
-    const targetView = isAdmin() ? "doctorData" : "patientHistory";
-    const titleEl = isAdmin() ? $("#patientHistoryTitle") : $("#doctorHistoryTitle");
-    const hintEl = isAdmin() ? $("#patientHistoryHint") : $("#doctorHistoryHint");
-    const selector = isAdmin() ? "#patientHistoryList" : "#doctorHistoryList";
 
     state.selectedHistoryPatient = patient || { id: patientId };
     state.historyConsultations = consultations;
-    titleEl.textContent = title;
-    hintEl.textContent = `${consultations.length} 条记录`;
-    renderPatientHistory(consultations, selector);
-    switchView(targetView);
+    $("#doctorHistoryTitle").textContent = title;
+    $("#doctorHistoryHint").textContent = `${consultations.length} 条记录`;
+    renderPatientHistory(consultations, "#doctorHistoryList");
+    switchView("patientHistory", {
+      pushHistory: getCurrentViewId() !== "patientHistory",
+      backLabel: isAdmin() ? "返回医生管理" : "返回患者列表",
+    });
   } catch (error) {
     toast(error.message);
   }
@@ -1505,7 +1568,6 @@ function renderPatientHistory(consultations, selector) {
       const consultationId = item["问诊ID"] || item.id;
       const report = item["AI报告"] || item.ai_report;
       const isRegenerating = state.regeneratingHistoryIndex === index;
-      const isExpanded = state.expandedHistoryReportIndex === index;
       const hasReport = Boolean(getReportText(report));
       const visitNo = consultations.length - index;
       return `
@@ -1518,7 +1580,7 @@ function renderPatientHistory(consultations, selector) {
                 <p class="history-meta">${formatDateTime(item["创建时间"] || item.created_at)} · ${hasReport ? "已生成 AI 报告" : "暂无 AI 报告"}</p>
               </div>
               <div class="row-actions">
-                <button class="ghost-btn" type="button" onclick="toggleHistoryFullReport(${index})" ${hasReport ? "" : "disabled"}>${isExpanded ? "收起完整报告" : "查看完整报告"}</button>
+                <button class="ghost-btn" type="button" onclick="openHistoryFullReport(${index})" ${hasReport ? "" : "disabled"}>查看完整报告</button>
                 <button class="ghost-btn" type="button" onclick="copyHistoryReport(${index})">复制报告</button>
                 <button class="ghost-btn" type="button" onclick="printHistoryReport(${index})">打印报告</button>
                 <button class="ghost-btn" type="button" onclick="regenerateHistoryReport(${index})" ${isRegenerating ? "disabled" : ""}>${isRegenerating ? "生成中..." : "重新生成报告"}</button>
@@ -1536,7 +1598,6 @@ function renderPatientHistory(consultations, selector) {
               <div class="history-report-title">AI报告摘要</div>
               ${getReportPreviewHtml(report)}
             </div>
-            ${isExpanded ? getFullReportHtml(report) : ""}
           </div>
         </div>
       `;
@@ -1545,15 +1606,25 @@ function renderPatientHistory(consultations, selector) {
   list.innerHTML = `${summaryHtml}<div class="history-timeline-list">${timelineHtml}</div>`;
 }
 
-window.toggleHistoryFullReport = function toggleHistoryFullReport(index) {
+window.openHistoryFullReport = function openHistoryFullReport(index) {
   const consultation = state.historyConsultations[index];
   const report = consultation?.["AI报告"] || consultation?.ai_report;
+  const consultationId = consultation?.["问诊ID"] || consultation?.id || report?.["问诊ID"] || report?.consultation_id;
   if (!getReportText(report)) {
     toast("这条问诊还没有生成 AI 报告");
     return;
   }
-  state.expandedHistoryReportIndex = state.expandedHistoryReportIndex === index ? null : index;
-  renderPatientHistory(state.historyConsultations, isAdmin() ? "#patientHistoryList" : "#doctorHistoryList");
+  state.fullReportDetail = {
+    report,
+    consultationId,
+    historyIndex: index,
+    patientName: state.selectedHistoryPatient?.["姓名"] || state.selectedHistoryPatient?.name || "患者",
+  };
+  renderFullReportDetail();
+  switchView("fullReportDetail", {
+    pushHistory: true,
+    backLabel: "返回问诊历史",
+  });
 };
 
 window.copyHistoryReport = function copyHistoryReport(index) {
@@ -1579,7 +1650,7 @@ window.regenerateHistoryReport = async function regenerateHistoryReport(index) {
   if (state.regeneratingHistoryIndex !== null) return;
 
   state.regeneratingHistoryIndex = index;
-  renderPatientHistory(state.historyConsultations, isAdmin() ? "#patientHistoryList" : "#doctorHistoryList");
+  renderPatientHistory(state.historyConsultations, "#doctorHistoryList");
   toast("正在重新生成该条历史报告");
 
   try {
@@ -1604,13 +1675,13 @@ window.regenerateHistoryReport = async function regenerateHistoryReport(index) {
         await window.showPatientHistory(patientId);
       }
     } else {
-      renderPatientHistory(state.historyConsultations, isAdmin() ? "#patientHistoryList" : "#doctorHistoryList");
+      renderPatientHistory(state.historyConsultations, "#doctorHistoryList");
     }
   } catch (error) {
     toast(error.message);
   } finally {
     state.regeneratingHistoryIndex = null;
-    renderPatientHistory(state.historyConsultations, isAdmin() ? "#patientHistoryList" : "#doctorHistoryList");
+    renderPatientHistory(state.historyConsultations, "#doctorHistoryList");
   }
 };
 
@@ -1622,6 +1693,59 @@ function printCurrentReport() {
   const reportTime = $("#reportTime")?.textContent || "";
   const title = reportTime && reportTime !== "暂无报告" ? `AI辅助决策报告 - ${reportTime}` : "AI辅助决策报告";
   printText(title, getReportText(state.lastReport));
+}
+
+function copyFullReportDetail() {
+  copyText(getReportText(state.fullReportDetail.report));
+}
+
+function printFullReportDetail() {
+  const patientName = state.fullReportDetail.patientName || "患者";
+  printText(`${patientName} AI辅助决策报告`, getReportText(state.fullReportDetail.report));
+}
+
+async function regenerateFullReportDetail() {
+  const consultationId = state.fullReportDetail.consultationId;
+  if (!consultationId) {
+    toast("暂无可重新生成的问诊记录");
+    return;
+  }
+  if (state.isRegeneratingReport) return;
+
+  state.isRegeneratingReport = true;
+  updateFullReportActions();
+  $("#fullReportContent").className = "report-empty";
+  $("#fullReportContent").textContent = "正在重新生成 AI 报告，请稍候...";
+  toast("正在重新生成 AI 报告");
+
+  try {
+    const report = await request(`/ai/decision/${consultationId}?force=true`, { method: "POST" });
+    state.fullReportDetail.report = report;
+    state.lastReport = report;
+    state.lastReportConsultationId = consultationId;
+
+    const historyIndex = state.fullReportDetail.historyIndex;
+    if (historyIndex !== null && state.historyConsultations[historyIndex]) {
+      state.historyConsultations[historyIndex]["AI报告"] = report;
+      state.historyConsultations[historyIndex].ai_report = report;
+    }
+
+    renderFullReportDetail();
+    toast("AI报告已重新生成");
+    await loadPatients();
+    if (isAdmin()) {
+      await loadDashboardData();
+      await loadDoctorData();
+    } else {
+      await loadDoctorDashboardData();
+    }
+  } catch (error) {
+    renderFullReportDetail();
+    toast(error.message);
+  } finally {
+    state.isRegeneratingReport = false;
+    updateFullReportActions();
+  }
 }
 
 async function regenerateCurrentReport() {
@@ -1719,12 +1843,18 @@ function printText(title, text) {
   printWindow.print();
 }
 
-function switchView(target) {
+function switchView(target, options = {}) {
   if (target === "doctorData" && !isAdmin()) target = "patients";
   if (target === "operationLogs" && !isAdmin()) target = "patients";
-  if (target === "patientHistory" && isAdmin()) target = "doctorData";
+  if (target === "fullReportDetail" && !state.fullReportDetail.report) target = "patientHistory";
 
-  const currentView = document.querySelector(".view.active")?.id;
+  const currentView = getCurrentViewId();
+  if (options.pushHistory) {
+    pushNavigationEntry(options.backLabel || "返回");
+  }
+  if (options.clearHistory) {
+    clearNavigationStack();
+  }
   if (currentView === "report" && target !== "report" && state.lastReport) {
     state.clearReportOnNextOpen = true;
   }
@@ -1743,6 +1873,9 @@ function switchView(target) {
   const navTitle = document.querySelector(`[data-target="${target}"]`)?.textContent;
   if (target === "patientHistory") {
     $("#pageTitle").textContent = "患者历史详情";
+  } else if (target === "fullReportDetail") {
+    $("#pageTitle").textContent = "完整AI报告";
+    renderFullReportDetail();
   } else if (target === "doctorData" && isAdmin()) {
     $("#pageTitle").textContent = "医生管理";
   } else if (target === "dashboard" && isAdmin()) {
@@ -1755,6 +1888,7 @@ function switchView(target) {
   } else {
     $("#pageTitle").textContent = navTitle || "工作台";
   }
+  updateBackButton();
 }
 
 async function refreshData() {
@@ -1833,7 +1967,7 @@ function resetDoctorFilters() {
 function bindEvents() {
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", async () => {
-      switchView(item.dataset.target);
+      switchView(item.dataset.target, { clearHistory: true });
       if (item.dataset.target === "dashboard" && isAdmin() && !state.dashboardStats) {
         await loadDashboardData();
       }
@@ -1852,12 +1986,13 @@ function bindEvents() {
     });
   });
   document.querySelectorAll(".quick-action").forEach((button) => {
-    button.addEventListener("click", () => switchView(button.dataset.target));
+    button.addEventListener("click", () => switchView(button.dataset.target, { clearHistory: true }));
   });
   document.querySelectorAll("[data-export-type]").forEach((button) => {
     button.addEventListener("click", () => downloadAdminExport(button.dataset.exportType));
   });
   $("#refreshBtn").addEventListener("click", refreshData);
+  $("#globalBackBtn")?.addEventListener("click", goBack);
   $("#loginForm").addEventListener("submit", login);
   $("#loginUsername").addEventListener("input", () => setLoginError());
   $("#loginPassword").addEventListener("input", () => setLoginError());
@@ -1871,6 +2006,9 @@ function bindEvents() {
   $("#copyReportBtn").addEventListener("click", copyCurrentReport);
   $("#printReportBtn").addEventListener("click", printCurrentReport);
   $("#regenerateReportBtn").addEventListener("click", regenerateCurrentReport);
+  $("#copyFullReportBtn")?.addEventListener("click", copyFullReportDetail);
+  $("#printFullReportBtn")?.addEventListener("click", printFullReportDetail);
+  $("#regenerateFullReportBtn")?.addEventListener("click", regenerateFullReportDetail);
   $("#doctorFilterBtn").addEventListener("click", async () => {
     await loadDoctorData();
   });

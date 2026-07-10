@@ -197,6 +197,17 @@ select {
   margin-bottom: 22px;
 }
 
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.back-btn {
+  flex: 0 0 auto;
+}
+
 .topbar h2 {
   margin: 0;
   font-size: 26px;
@@ -928,42 +939,6 @@ select:focus {
   margin-top: 12px;
 }
 
-.history-full-report {
-  margin-top: 14px;
-  padding: 14px;
-  border: 1px solid #dbe3ef;
-  border-radius: 8px;
-  background: #fbfdff;
-}
-
-.history-full-report .report-content,
-.history-full-report .report-empty {
-  min-height: auto;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.history-full-report-text {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid #e2e8f0;
-  color: #334155;
-}
-
-.history-full-report-text summary {
-  cursor: pointer;
-  color: #1d5f9f;
-  font-weight: 700;
-}
-
-.history-full-report-text pre {
-  margin: 10px 0 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  line-height: 1.7;
-}
-
 .history-report-preview p {
   margin: 6px 0 0;
   color: #334155;
@@ -1392,6 +1367,26 @@ select:focus {
   font-size: 13px;
 }
 
+.full-report-raw {
+  margin-top: 12px;
+  padding: 12px 0 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.full-report-raw summary {
+  cursor: pointer;
+  color: #1d5f9f;
+  font-weight: 700;
+}
+
+.full-report-raw pre {
+  margin: 10px 0 0;
+  color: #334155;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .toast {
   position: fixed;
   top: 22px;
@@ -1478,6 +1473,11 @@ select:focus {
   .topbar,
   .status-group {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .title-group {
+    align-items: flex-start;
     flex-direction: column;
   }
 
