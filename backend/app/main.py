@@ -66,6 +66,32 @@ def csv_export_response(filename: str, headers: list[str], rows: list[list[Any]]
     )
 
 
+def write_operation_log(
+    db: Session,
+    current_user: models.User | None,
+    action: str,
+    module: str,
+    target_type: str | None = None,
+    target_id: Any | None = None,
+    detail: str | None = None,
+) -> None:
+    try:
+        log = models.OperationLog(
+            user_id=current_user.id if current_user else None,
+            username=current_user.username if current_user else None,
+            role=current_user.role if current_user else None,
+            action=action,
+            module=module,
+            target_type=target_type,
+            target_id=str(target_id) if target_id is not None else None,
+            detail=detail,
+        )
+        db.add(log)
+        db.commit()
+    except Exception:
+        db.rollback()
+
+
 def base64_url_encode(raw_text: str) -> str:
     return base64.urlsafe_b64encode(raw_text.encode("utf-8")).decode("utf-8").rstrip("=")
 
@@ -621,6 +647,7 @@ def build_ai_report(consultation_id: int, db: Session, current_user: models.User
         raise_http_error(status.HTTP_404_NOT_FOUND, "问诊记录不存在")
     ensure_consultation_permission(consultation, current_user)
 
+    had_report = consultation.ai_report is not None
     if consultation.ai_report and not force:
         return consultation.ai_report
 
@@ -646,6 +673,15 @@ def build_ai_report(consultation_id: int, db: Session, current_user: models.User
         db.add(db_report)
     db.commit()
     db.refresh(db_report)
+    write_operation_log(
+        db,
+        current_user,
+        "重新生成" if had_report else "生成",
+        "AI报告",
+        "AI报告",
+        db_report.id,
+        f"{'重新生成' if had_report else '生成'}AI报告：问诊ID {consultation.id}",
+    )
     return db_report
 
 
@@ -675,6 +711,7 @@ def login(login_data: schemas.LoginRequest, db: Session = Depends(get_db)):
 
     result = schemas.UserOut.model_validate(user).model_dump()
     result["token"] = create_access_token(user)
+    write_operation_log(db, user, "登录", "登录系统", "用户", user.id, f"{user.username} 登录系统")
     return result
 
 
@@ -752,6 +789,15 @@ def create_patient(
     db.add(db_patient)
     db.commit()
     db.refresh(db_patient)
+    write_operation_log(
+        db,
+        current_user,
+        "新增",
+        "患者管理",
+        "患者",
+        db_patient.id,
+        f"新增患者：{db_patient.name}",
+    )
     return db_patient
 
 
@@ -787,6 +833,15 @@ def update_patient(
 
     db.commit()
     db.refresh(patient)
+    write_operation_log(
+        db,
+        current_user,
+        "修改",
+        "患者管理",
+        "患者",
+        patient.id,
+        f"修改患者信息：{patient.name}",
+    )
     return patient
 
 
@@ -801,8 +856,18 @@ def delete_patient(
         raise_http_error(status.HTTP_404_NOT_FOUND, "患者不存在")
     ensure_patient_permission(patient, current_user)
 
+    patient_name = patient.name
     db.delete(patient)
     db.commit()
+    write_operation_log(
+        db,
+        current_user,
+        "删除",
+        "患者管理",
+        "患者",
+        patient_id,
+        f"删除患者：{patient_name}",
+    )
     return {"message": "患者删除成功", "patient_id": patient_id}
 
 
@@ -846,6 +911,15 @@ def create_consultation(
     db.add(db_consultation)
     db.commit()
     db.refresh(db_consultation)
+    write_operation_log(
+        db,
+        current_user,
+        "新增",
+        "问诊管理",
+        "问诊",
+        db_consultation.id,
+        f"新增问诊记录：患者ID {db_consultation.patient_id}",
+    )
     return db_consultation
 
 
@@ -860,11 +934,21 @@ def delete_consultation(
         raise_http_error(status.HTTP_404_NOT_FOUND, "问诊记录不存在")
     ensure_consultation_permission(consultation, current_user)
 
+    patient_id = consultation.patient_id
     if consultation.ai_report is not None:
         db.delete(consultation.ai_report)
         db.flush()
     db.delete(consultation)
     db.commit()
+    write_operation_log(
+        db,
+        current_user,
+        "删除",
+        "问诊管理",
+        "问诊",
+        consultation_id,
+        f"删除问诊记录：患者ID {patient_id}",
+    )
     return {"message": "问诊记录删除成功", "consultation_id": consultation_id}
 
 
@@ -1040,9 +1124,54 @@ def list_doctors(
     return get_doctor_stats(db=db)
 
 
+@app.get(
+    "/admin/operation-logs",
+    response_model=schemas.OperationLogPageOut,
+    summary="管理员查询操作日志",
+    tags=["操作日志"],
+)
+def list_operation_logs(
+    keyword: str | None = Query(None),
+    module: str | None = Query(None),
+    action: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    _: models.User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    query = db.query(models.OperationLog)
+    if keyword:
+        like_keyword = f"%{keyword.strip()}%"
+        query = query.filter(
+            or_(
+                models.OperationLog.username.like(like_keyword),
+                models.OperationLog.detail.like(like_keyword),
+                models.OperationLog.target_id.like(like_keyword),
+            )
+        )
+    if module:
+        query = query.filter(models.OperationLog.module == module)
+    if action:
+        query = query.filter(models.OperationLog.action == action)
+
+    total = query.count()
+    logs = (
+        query.order_by(desc(models.OperationLog.created_at), desc(models.OperationLog.id))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return {
+        "items": logs,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
 @app.get("/admin/export/doctors", summary="导出医生统计数据", tags=["数据导出"])
 def export_doctors(
-    _: models.User = Depends(get_current_admin),
+    current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     doctors = get_doctor_stats(db=db, sort_by="doctor_id", sort_order="asc")
@@ -1059,6 +1188,7 @@ def export_doctors(
         ]
         for doctor in doctors
     ]
+    write_operation_log(db, current_admin, "导出", "数据导出", "CSV", "doctors", "导出医生统计 CSV")
     return csv_export_response(
         "admin_doctors.csv",
         ["医生ID", "用户名", "医生姓名", "账号状态", "患者数量", "问诊次数", "AI报告数量", "最近问诊时间"],
@@ -1068,7 +1198,7 @@ def export_doctors(
 
 @app.get("/admin/export/patients", summary="导出患者数据", tags=["数据导出"])
 def export_patients(
-    _: models.User = Depends(get_current_admin),
+    current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     rows = (
@@ -1093,6 +1223,7 @@ def export_patients(
         ]
         for patient, username, real_name in rows
     ]
+    write_operation_log(db, current_admin, "导出", "数据导出", "CSV", "patients", "导出患者数据 CSV")
     return csv_export_response(
         "admin_patients.csv",
         ["患者ID", "姓名", "性别", "年龄", "电话", "地址", "医生ID", "所属医生", "既往病史", "过敏史", "创建时间"],
@@ -1102,7 +1233,7 @@ def export_patients(
 
 @app.get("/admin/export/consultations", summary="导出问诊记录", tags=["数据导出"])
 def export_consultations(
-    _: models.User = Depends(get_current_admin),
+    current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     rows = (
@@ -1136,6 +1267,7 @@ def export_consultations(
         ]
         for consultation, patient_name, doctor_username, doctor_real_name, report_id in rows
     ]
+    write_operation_log(db, current_admin, "导出", "数据导出", "CSV", "consultations", "导出问诊记录 CSV")
     return csv_export_response(
         "admin_consultations.csv",
         ["问诊ID", "患者ID", "患者姓名", "医生ID", "医生姓名", "主诉", "症状", "现病史", "既往史", "检查结果", "是否生成AI报告", "创建时间"],
@@ -1145,7 +1277,7 @@ def export_consultations(
 
 @app.get("/admin/export/reports", summary="导出AI报告数据", tags=["数据导出"])
 def export_reports(
-    _: models.User = Depends(get_current_admin),
+    current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     rows = (
@@ -1180,6 +1312,7 @@ def export_reports(
         ]
         for report, patient_id, doctor_id, patient_name, doctor_username, doctor_real_name in rows
     ]
+    write_operation_log(db, current_admin, "导出", "数据导出", "CSV", "reports", "导出AI报告 CSV")
     return csv_export_response(
         "admin_ai_reports.csv",
         ["报告ID", "问诊ID", "患者ID", "患者姓名", "医生ID", "医生姓名", "可能疾病", "建议检查", "辅助建议", "风险提示", "完整报告", "创建时间"],
@@ -1190,7 +1323,7 @@ def export_reports(
 @app.post("/admin/doctors", response_model=schemas.UserOut, summary="管理员新增医生", tags=["医生数据"])
 def create_doctor(
     doctor: schemas.DoctorCreate,
-    _: models.User = Depends(get_current_admin),
+    current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     existing_user = db.query(models.User).filter(models.User.username == doctor.username).first()
@@ -1207,6 +1340,15 @@ def create_doctor(
     db.add(db_doctor)
     db.commit()
     db.refresh(db_doctor)
+    write_operation_log(
+        db,
+        current_admin,
+        "新增",
+        "医生管理",
+        "医生",
+        db_doctor.id,
+        f"新增医生账号：{db_doctor.username}",
+    )
     return db_doctor
 
 
@@ -1214,7 +1356,7 @@ def create_doctor(
 def update_doctor(
     doctor_id: int,
     doctor_update: schemas.DoctorUpdate,
-    _: models.User = Depends(get_current_admin),
+    current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     doctor = get_doctor_or_404(doctor_id, db)
@@ -1231,6 +1373,15 @@ def update_doctor(
     doctor.real_name = doctor_update.real_name
     db.commit()
     db.refresh(doctor)
+    write_operation_log(
+        db,
+        current_admin,
+        "修改",
+        "医生管理",
+        "医生",
+        doctor.id,
+        f"编辑医生信息：{doctor.username}",
+    )
     return doctor
 
 
@@ -1238,12 +1389,21 @@ def update_doctor(
 def reset_doctor_password(
     doctor_id: int,
     payload: schemas.DoctorPasswordReset,
-    _: models.User = Depends(get_current_admin),
+    current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
     doctor = get_doctor_or_404(doctor_id, db)
     doctor.password = payload.password
     db.commit()
+    write_operation_log(
+        db,
+        current_admin,
+        "重置密码",
+        "医生管理",
+        "医生",
+        doctor_id,
+        f"重置医生密码：{doctor.username}",
+    )
     return {"message": "医生密码重置成功", "doctor_id": doctor_id}
 
 
@@ -1261,6 +1421,16 @@ def update_doctor_status(
     doctor.is_active = 1 if payload.is_active else 0
     db.commit()
     db.refresh(doctor)
+    action = "启用" if payload.is_active else "禁用"
+    write_operation_log(
+        db,
+        current_admin,
+        action,
+        "医生管理",
+        "医生",
+        doctor.id,
+        f"{action}医生账号：{doctor.username}",
+    )
     return doctor
 
 

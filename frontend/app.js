@@ -19,6 +19,17 @@ const state = {
   selectedHistoryPatient: null,
   historyConsultations: [],
   dashboardStats: null,
+  operationLogs: {
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 20,
+  },
+  operationLogFilters: {
+    keyword: "",
+    module: "",
+    action: "",
+  },
   editingPatientId: null,
   isSavingConsultation: false,
   isRegeneratingReport: false,
@@ -123,6 +134,17 @@ function resetRuntimeState() {
   state.selectedHistoryPatient = null;
   state.historyConsultations = [];
   state.dashboardStats = null;
+  state.operationLogs = {
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 20,
+  };
+  state.operationLogFilters = {
+    keyword: "",
+    module: "",
+    action: "",
+  };
   state.editingPatientId = null;
   state.isSavingConsultation = false;
   state.isRegeneratingReport = false;
@@ -610,6 +632,97 @@ function renderActivePatientList(patients) {
         </div>
       </div>
     `)
+    .join("");
+}
+
+function getOperationLogValue(log, chineseKey, englishKey, fallback = "") {
+  const value = log?.[chineseKey] ?? log?.[englishKey];
+  return value === null || value === undefined || value === "" ? fallback : value;
+}
+
+function getOperationLogFiltersFromInputs() {
+  state.operationLogFilters.keyword = $("#operationLogKeyword")?.value.trim() || "";
+  state.operationLogFilters.module = $("#operationLogModule")?.value || "";
+  state.operationLogFilters.action = $("#operationLogAction")?.value || "";
+}
+
+function syncOperationLogFiltersToInputs() {
+  if ($("#operationLogKeyword")) $("#operationLogKeyword").value = state.operationLogFilters.keyword;
+  if ($("#operationLogModule")) $("#operationLogModule").value = state.operationLogFilters.module;
+  if ($("#operationLogAction")) $("#operationLogAction").value = state.operationLogFilters.action;
+}
+
+function resetOperationLogFilters() {
+  state.operationLogFilters = {
+    keyword: "",
+    module: "",
+    action: "",
+  };
+  state.operationLogs.page = 1;
+  syncOperationLogFiltersToInputs();
+}
+
+async function loadOperationLogs(page = state.operationLogs.page || 1) {
+  if (!isAdmin()) return;
+  getOperationLogFiltersFromInputs();
+  showLoading("#operationLogList", "正在加载操作日志...");
+  const query = buildQuery({
+    keyword: state.operationLogFilters.keyword,
+    module: state.operationLogFilters.module,
+    action: state.operationLogFilters.action,
+    page,
+    page_size: state.operationLogs.pageSize,
+  });
+  const result = await request(`/admin/operation-logs${query}`);
+  state.operationLogs = {
+    items: result["日志列表"] || result.items || [],
+    total: result["总数"] ?? result.total ?? 0,
+    page: result["页码"] ?? result.page ?? page,
+    pageSize: result["每页数量"] ?? result.page_size ?? state.operationLogs.pageSize,
+  };
+  renderOperationLogs();
+}
+
+function renderOperationLogs() {
+  const list = $("#operationLogList");
+  if (!list) return;
+
+  const { items, total, page, pageSize } = state.operationLogs;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  $("#operationLogHint").textContent = `共 ${total} 条记录`;
+  $("#operationLogPageHint").textContent = `第 ${page} / ${totalPages} 页`;
+  $("#operationLogPrevBtn").disabled = page <= 1;
+  $("#operationLogNextBtn").disabled = page >= totalPages;
+
+  if (!items.length) {
+    list.innerHTML = '<div class="report-empty">暂无操作日志。</div>';
+    return;
+  }
+
+  list.innerHTML = items
+    .map((log) => {
+      const username = getOperationLogValue(log, "用户名", "username", "未知用户");
+      const role = getOperationLogValue(log, "角色", "role", "未知角色");
+      const moduleName = getOperationLogValue(log, "模块", "module", "-");
+      const action = getOperationLogValue(log, "操作", "action", "-");
+      const targetType = getOperationLogValue(log, "对象类型", "target_type", "-");
+      const targetId = getOperationLogValue(log, "对象ID", "target_id", "-");
+      const detail = getOperationLogValue(log, "详情", "detail", "无详情");
+      const createdAt = getOperationLogValue(log, "创建时间", "created_at", "");
+      return `
+        <div class="log-item">
+          <div class="log-main">
+            <strong>${escapeHtml(moduleName)} · ${escapeHtml(action)}</strong>
+            <p>${escapeHtml(detail)}</p>
+          </div>
+          <div class="log-meta">
+            <span>${escapeHtml(formatDateTime(createdAt))}</span>
+            <span>${escapeHtml(username)} / ${escapeHtml(role)}</span>
+            <span>${escapeHtml(targetType)}：${escapeHtml(targetId)}</span>
+          </div>
+        </div>
+      `;
+    })
     .join("");
 }
 
@@ -1400,6 +1513,7 @@ function printText(title, text) {
 
 function switchView(target) {
   if (target === "doctorData" && !isAdmin()) target = "patients";
+  if (target === "operationLogs" && !isAdmin()) target = "patients";
   if (target === "patientHistory" && isAdmin()) target = "doctorData";
 
   const currentView = document.querySelector(".view.active")?.id;
@@ -1425,6 +1539,8 @@ function switchView(target) {
     $("#pageTitle").textContent = "医生管理";
   } else if (target === "dashboard" && isAdmin()) {
     $("#pageTitle").textContent = "管理看板";
+  } else if (target === "operationLogs" && isAdmin()) {
+    $("#pageTitle").textContent = "操作日志";
   } else if (target === "settings") {
     $("#pageTitle").textContent = "个人中心";
     renderSettings();
@@ -1444,6 +1560,11 @@ async function refreshData() {
     const currentView = document.querySelector(".view.active")?.id || "dashboard";
     if (currentView === "settings") {
       await loadCurrentUser();
+      toast("刷新成功");
+      return;
+    }
+    if (currentView === "operationLogs") {
+      await loadOperationLogs(state.operationLogs.page);
       toast("刷新成功");
       return;
     }
@@ -1507,6 +1628,9 @@ function bindEvents() {
       if (item.dataset.target === "doctorData" && isAdmin() && !state.doctors.length) {
         await loadDoctorData();
       }
+      if (item.dataset.target === "operationLogs" && isAdmin()) {
+        await loadOperationLogs(1);
+      }
       if (item.dataset.target === "settings" && state.currentUser) {
         await loadCurrentUser();
       }
@@ -1538,6 +1662,32 @@ function bindEvents() {
   });
   $("#doctorSortBy").addEventListener("change", loadDoctorData);
   $("#doctorSortOrder").addEventListener("change", loadDoctorData);
+  $("#operationLogSearchBtn")?.addEventListener("click", async () => {
+    state.operationLogs.page = 1;
+    await loadOperationLogs(1);
+  });
+  $("#operationLogResetBtn")?.addEventListener("click", async () => {
+    resetOperationLogFilters();
+    await loadOperationLogs(1);
+  });
+  $("#operationLogPrevBtn")?.addEventListener("click", async () => {
+    if (state.operationLogs.page > 1) {
+      await loadOperationLogs(state.operationLogs.page - 1);
+    }
+  });
+  $("#operationLogNextBtn")?.addEventListener("click", async () => {
+    const totalPages = Math.max(1, Math.ceil(state.operationLogs.total / state.operationLogs.pageSize));
+    if (state.operationLogs.page < totalPages) {
+      await loadOperationLogs(state.operationLogs.page + 1);
+    }
+  });
+  $("#operationLogKeyword")?.addEventListener("keydown", async (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      state.operationLogs.page = 1;
+      await loadOperationLogs(1);
+    }
+  });
   $("#doctorSearch").addEventListener("keydown", async (event) => {
     if (event.key === "Enter") {
       event.preventDefault();

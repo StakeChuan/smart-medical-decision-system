@@ -122,3 +122,20 @@ class Message(Base):
     conversation = relationship("MessageConversation", back_populates="messages")
     sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")
     receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
+
+
+class OperationLog(Base):
+    __tablename__ = "operation_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))
+    username = Column(String(50))
+    role = Column(String(20))
+    action = Column(String(30), nullable=False)
+    module = Column(String(50), nullable=False)
+    target_type = Column(String(50))
+    target_id = Column(String(50))
+    detail = Column(Text)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
+    user = relationship("User")

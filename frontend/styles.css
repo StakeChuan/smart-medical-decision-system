@@ -474,6 +474,13 @@ select {
   align-items: center;
 }
 
+.log-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(140px, 180px)) repeat(2, auto);
+  gap: 10px;
+  align-items: center;
+}
+
 .inline-input,
 .inline-select {
   width: 100%;
@@ -681,6 +688,52 @@ select:focus {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.log-list {
+  display: grid;
+  gap: 10px;
+}
+
+.log-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.55fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.log-main {
+  min-width: 0;
+}
+
+.log-main strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.log-main p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.log-meta {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: right;
+}
+
+.log-pagination {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .row-actions {
@@ -1194,7 +1247,8 @@ select:focus {
     max-height: 500px;
   }
 
-  .filter-bar {
+  .filter-bar,
+  .log-filter-bar {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -1225,7 +1279,8 @@ select:focus {
   .workflow,
   .topbar,
   .status-group,
-  .filter-bar {
+  .filter-bar,
+  .log-filter-bar {
     grid-template-columns: 1fr;
   }
 
@@ -1252,8 +1307,13 @@ select:focus {
   }
 
   .patient-row,
-  .rank-item {
+  .rank-item,
+  .log-item {
     grid-template-columns: 1fr;
+  }
+
+  .log-meta {
+    text-align: left;
   }
 
   .doctor-row {
@@ -1375,6 +1435,11 @@ select:focus {
 
   .message-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .log-pagination {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .export-actions {

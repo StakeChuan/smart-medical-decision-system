@@ -36,6 +36,7 @@
         <nav class="nav">
           <button class="nav-item active" data-target="dashboard">工作台</button>
           <button class="nav-item admin-only" data-target="doctorData">医生管理</button>
+          <button class="nav-item admin-only" data-target="operationLogs">操作日志</button>
           <button class="nav-item" data-target="patients">患者管理</button>
           <button class="nav-item" data-target="consultation">问诊录入</button>
           <button class="nav-item" data-target="report">AI报告</button>
@@ -218,6 +219,54 @@
                 <span id="patientHistoryHint">请选择患者</span>
               </div>
               <div id="patientHistoryList" class="history-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="operationLogs" class="view">
+          <div class="panel toolbar-panel">
+            <div class="panel-head compact-head">
+              <h3>操作日志筛选</h3>
+              <span id="operationLogHint">最近操作记录</span>
+            </div>
+            <div class="log-filter-bar">
+              <input id="operationLogKeyword" class="inline-input" placeholder="搜索用户名、详情或对象ID" />
+              <select id="operationLogModule" class="inline-select">
+                <option value="">全部模块</option>
+                <option value="登录系统">登录系统</option>
+                <option value="患者管理">患者管理</option>
+                <option value="问诊管理">问诊管理</option>
+                <option value="AI报告">AI报告</option>
+                <option value="医生管理">医生管理</option>
+                <option value="数据导出">数据导出</option>
+              </select>
+              <select id="operationLogAction" class="inline-select">
+                <option value="">全部操作</option>
+                <option value="登录">登录</option>
+                <option value="新增">新增</option>
+                <option value="修改">修改</option>
+                <option value="删除">删除</option>
+                <option value="生成">生成</option>
+                <option value="重新生成">重新生成</option>
+                <option value="导出">导出</option>
+                <option value="启用">启用</option>
+                <option value="禁用">禁用</option>
+                <option value="重置密码">重置密码</option>
+              </select>
+              <button id="operationLogSearchBtn" class="ghost-btn" type="button">查询</button>
+              <button id="operationLogResetBtn" class="ghost-btn" type="button">重置</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>操作日志</h3>
+              <span id="operationLogPageHint">第 1 页</span>
+            </div>
+            <div id="operationLogList" class="log-list"></div>
+            <div class="log-pagination">
+              <button id="operationLogPrevBtn" class="ghost-btn" type="button">上一页</button>
+              <button id="operationLogNextBtn" class="ghost-btn" type="button">下一页</button>
             </div>
           </div>
         </section>

@@ -285,6 +285,26 @@ class AdminDashboardOut(AppBaseModel):
     top_doctors: list[DoctorStatsOut] = Field(default_factory=list, alias="医生排行")
     recent_patients: list[DashboardPatientOut] = Field(default_factory=list, alias="最近新增患者")
     active_patients: list[DashboardPatientOut] = Field(default_factory=list, alias="活跃患者")
+
+
+class OperationLogOut(AppOrmModel):
+    id: int = Field(..., alias="日志ID")
+    user_id: int | None = Field(None, alias="用户ID")
+    username: str | None = Field(None, alias="用户名")
+    role: str | None = Field(None, alias="角色")
+    action: str = Field(..., alias="操作")
+    module: str = Field(..., alias="模块")
+    target_type: str | None = Field(None, alias="对象类型")
+    target_id: str | None = Field(None, alias="对象ID")
+    detail: str | None = Field(None, alias="详情")
+    created_at: datetime = Field(..., alias="创建时间")
+
+
+class OperationLogPageOut(AppBaseModel):
+    items: list[OperationLogOut] = Field(default_factory=list, alias="日志列表")
+    total: int = Field(0, alias="总数")
+    page: int = Field(1, alias="页码")
+    page_size: int = Field(20, alias="每页数量")
 class MessageUserOut(AppOrmModel):
     id: int = Field(..., alias="用户ID")
     username: str = Field(..., alias="用户名")
