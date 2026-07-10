@@ -1,9 +1,18 @@
 function resolveApiBase() {
-  const hostname = window.location.hostname;
-  if (!hostname || window.location.protocol === "file:") {
-    return "http://127.0.0.1:8000";
-  }
-  return `http://${hostname}:8000`;
+    const hostname = window.location.hostname;
+
+    // 本地文件打开
+    if (!hostname || window.location.protocol === "file:") {
+        return "http://127.0.0.1:8000";
+    }
+
+    // Cloudflare公网访问
+    if (hostname.includes("trycloudflare.com")) {
+        return "https://breakfast-bacteria-acid-used.trycloudflare.com";
+    }
+
+    // 局域网访问
+    return `http://${hostname}:8000`;
 }
 
 const API_BASE = resolveApiBase();
