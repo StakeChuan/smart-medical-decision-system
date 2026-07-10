@@ -1346,7 +1346,7 @@ def list_operation_logs(
     module: str | None = Query(None),
     action: str | None = Query(None),
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(5, ge=1, le=100),
     _: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):

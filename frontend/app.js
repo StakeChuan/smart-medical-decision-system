@@ -24,7 +24,7 @@ const state = {
     items: [],
     total: 0,
     page: 1,
-    pageSize: 20,
+    pageSize: 5,
   },
   operationLogFilters: {
     keyword: "",
@@ -141,7 +141,7 @@ function resetRuntimeState() {
     items: [],
     total: 0,
     page: 1,
-    pageSize: 20,
+    pageSize: 5,
   };
   state.operationLogFilters = {
     keyword: "",
