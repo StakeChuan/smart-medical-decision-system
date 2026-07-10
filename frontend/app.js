@@ -45,6 +45,11 @@ const state = {
     sortBy: "consultation_count",
     sortOrder: "desc",
   },
+  pagination: {
+    pageSize: 5,
+    patientsPage: 1,
+    doctorPatientsPage: 1,
+  },
   navigationStack: [],
   fullReportDetail: {
     report: null,
@@ -161,6 +166,11 @@ function resetRuntimeState() {
   state.lastReport = null;
   state.lastReportConsultationId = null;
   state.clearReportOnNextOpen = false;
+  state.pagination = {
+    pageSize: 5,
+    patientsPage: 1,
+    doctorPatientsPage: 1,
+  };
   state.navigationStack = [];
   state.fullReportDetail = {
     report: null,
@@ -209,6 +219,32 @@ function showLoading(selector, message = "加载中...") {
   if (el) {
     el.innerHTML = `<div class="report-empty">${escapeHtml(message)}</div>`;
   }
+}
+
+function clampPage(page, totalItems, pageSize) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  return Math.min(Math.max(1, page), totalPages);
+}
+
+function pageItems(items, page, pageSize) {
+  const start = (page - 1) * pageSize;
+  return items.slice(start, start + pageSize);
+}
+
+function renderLocalPagination(containerSelector, totalItems, page, pageSize, onPageChangeName) {
+  const container = $(containerSelector);
+  if (!container) return;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  if (totalItems <= pageSize) {
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = `
+    <button class="ghost-btn" type="button" onclick="${onPageChangeName}(${page - 1})" ${page <= 1 ? "disabled" : ""}>上一页</button>
+    <span>第 ${page} / ${totalPages} 页 · 共 ${totalItems} 条</span>
+    <button class="ghost-btn" type="button" onclick="${onPageChangeName}(${page + 1})" ${page >= totalPages ? "disabled" : ""}>下一页</button>
+  `;
 }
 
 function formatValidationMessage(item) {
@@ -648,7 +684,15 @@ function pushNavigationEntry(label) {
 
 function goBack() {
   const previous = state.navigationStack.pop();
-  if (!previous) return;
+  if (!previous) {
+    const currentView = getCurrentViewId();
+    if (currentView === "fullReportDetail") {
+      switchView("patientHistory", { clearHistory: true });
+    } else if (currentView === "patientHistory") {
+      switchView(isAdmin() ? "doctorData" : "patients", { clearHistory: true });
+    }
+    return;
+  }
   switchView(previous.view, { skipHistory: true });
 }
 
@@ -976,6 +1020,7 @@ function renderOperationLogs() {
 
 async function loadPatients() {
   state.patients = await request("/patients");
+  state.pagination.patientsPage = clampPage(state.pagination.patientsPage, state.patients.length, state.pagination.pageSize);
   renderDoctorDashboard();
   renderPatients();
   renderPatientOptions();
@@ -984,13 +1029,19 @@ async function loadPatients() {
 function renderPatients() {
   $("#patientListHint").textContent = `${state.patients.length} 条`;
   const list = $("#patientList");
+  const pagination = $("#patientPagination");
 
   if (!state.patients.length) {
     list.innerHTML = '<div class="report-empty">暂无患者，请先新增患者。</div>';
+    if (pagination) pagination.innerHTML = "";
     return;
   }
 
-  list.innerHTML = state.patients
+  const page = clampPage(state.pagination.patientsPage, state.patients.length, state.pagination.pageSize);
+  state.pagination.patientsPage = page;
+  const visiblePatients = pageItems(state.patients, page, state.pagination.pageSize);
+
+  list.innerHTML = visiblePatients
     .map((patient) => {
       const id = patient["患者ID"] || patient.id;
       const doctorId = patient["医生ID"] || patient.doctor_id || "未绑定";
@@ -1010,7 +1061,13 @@ function renderPatients() {
       `;
     })
     .join("");
+  renderLocalPagination("#patientPagination", state.patients.length, page, state.pagination.pageSize, "changePatientPage");
 }
+
+window.changePatientPage = function changePatientPage(page) {
+  state.pagination.patientsPage = clampPage(page, state.patients.length, state.pagination.pageSize);
+  renderPatients();
+};
 
 function renderPatientOptions() {
   const select = $("#consultPatient");
@@ -1414,6 +1471,7 @@ window.selectDoctor = async function selectDoctor(id) {
   const doctor = state.doctors.find((item) => getDoctorId(item) === id);
   state.selectedDoctor = doctor || null;
   state.selectedDoctorPatients = [];
+  state.pagination.doctorPatientsPage = 1;
   $("#doctorPatientTitle").textContent = `${doctor?.["医生姓名"] || doctor?.real_name || doctor?.username || "医生"} 的患者名单`;
   $("#doctorPatientHint").textContent = "点击患者查看问诊历史";
   showLoading("#doctorPatientList");
@@ -1429,12 +1487,18 @@ window.selectDoctor = async function selectDoctor(id) {
 
 function renderDoctorPatients(patients) {
   const list = $("#doctorPatientList");
+  const pagination = $("#doctorPatientPagination");
   if (!patients.length) {
     list.innerHTML = '<div class="report-empty">该医生暂无患者。</div>';
+    if (pagination) pagination.innerHTML = "";
     return;
   }
 
-  list.innerHTML = patients
+  const page = clampPage(state.pagination.doctorPatientsPage, patients.length, state.pagination.pageSize);
+  state.pagination.doctorPatientsPage = page;
+  const visiblePatients = pageItems(patients, page, state.pagination.pageSize);
+
+  list.innerHTML = visiblePatients
     .map((patient) => {
       const id = patient["患者ID"] || patient.id;
       return `
@@ -1451,7 +1515,13 @@ function renderDoctorPatients(patients) {
       `;
     })
     .join("");
+  renderLocalPagination("#doctorPatientPagination", patients.length, page, state.pagination.pageSize, "changeDoctorPatientPage");
 }
+
+window.changeDoctorPatientPage = function changeDoctorPatientPage(page) {
+  state.pagination.doctorPatientsPage = clampPage(page, state.selectedDoctorPatients.length, state.pagination.pageSize);
+  renderDoctorPatients(state.selectedDoctorPatients);
+};
 
 function findPatientForHistory(patientId) {
   return (
@@ -1993,6 +2063,7 @@ function bindEvents() {
   });
   $("#refreshBtn").addEventListener("click", refreshData);
   $("#globalBackBtn")?.addEventListener("click", goBack);
+  $("#patientHistoryBackBtn")?.addEventListener("click", goBack);
   $("#loginForm").addEventListener("submit", login);
   $("#loginUsername").addEventListener("input", () => setLoginError());
   $("#loginPassword").addEventListener("input", () => setLoginError());
@@ -2009,6 +2080,7 @@ function bindEvents() {
   $("#copyFullReportBtn")?.addEventListener("click", copyFullReportDetail);
   $("#printFullReportBtn")?.addEventListener("click", printFullReportDetail);
   $("#regenerateFullReportBtn")?.addEventListener("click", regenerateFullReportDetail);
+  $("#backToHistoryBtn")?.addEventListener("click", goBack);
   $("#doctorFilterBtn").addEventListener("click", async () => {
     await loadDoctorData();
   });

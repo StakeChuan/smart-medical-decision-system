@@ -786,11 +786,19 @@ select:focus {
   text-align: right;
 }
 
-.log-pagination {
+.log-pagination,
+.list-pagination {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 14px;
+}
+
+.list-pagination span {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .row-actions {
@@ -1635,9 +1643,15 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
-  .log-pagination {
+  .log-pagination,
+  .list-pagination {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .list-pagination span {
+    grid-column: 1 / -1;
+    text-align: center;
   }
 
   .export-actions {

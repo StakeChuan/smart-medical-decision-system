@@ -250,6 +250,7 @@
                 <span id="doctorPatientHint">点击医生查看患者</span>
               </div>
               <div id="doctorPatientList" class="list doctor-patient-scroll-list"></div>
+              <div id="doctorPatientPagination" class="list-pagination"></div>
             </div>
           </div>
         </section>
@@ -306,7 +307,10 @@
           <div class="panel report-panel">
             <div class="panel-head">
               <h3 id="doctorHistoryTitle">患者历史详情</h3>
-              <span id="doctorHistoryHint">请选择患者</span>
+              <div class="panel-actions">
+                <span id="doctorHistoryHint">请选择患者</span>
+                <button id="patientHistoryBackBtn" class="ghost-btn" type="button">返回</button>
+              </div>
             </div>
             <div id="doctorHistoryList" class="history-list"></div>
           </div>
@@ -318,6 +322,7 @@
               <h3 id="fullReportTitle">完整AI报告</h3>
               <div class="panel-actions">
                 <span id="fullReportTime">暂无报告</span>
+                <button id="backToHistoryBtn" class="ghost-btn" type="button">返回问诊历史</button>
                 <button id="copyFullReportBtn" class="ghost-btn" type="button">复制报告</button>
                 <button id="printFullReportBtn" class="ghost-btn" type="button">打印报告</button>
                 <button id="regenerateFullReportBtn" class="ghost-btn" type="button">重新生成</button>
@@ -353,6 +358,7 @@
                 <span id="patientListHint">0 条</span>
               </div>
               <div id="patientList" class="list patient-scroll-list"></div>
+              <div id="patientPagination" class="list-pagination"></div>
             </div>
           </div>
         </section>
@@ -389,12 +395,16 @@
               </div>
               <div id="messageFetchStatus" class="message-status">请选择聊天对象或会话</div>
               <div id="messageConversationList" class="list"></div>
+              <div id="messageConversationPagination" class="list-pagination"></div>
             </div>
 
             <div class="panel">
               <div class="panel-head">
                 <h3 id="messagePanelTitle">消息详情</h3>
-                <span id="messagePanelHint">尚未选择会话</span>
+                <div class="panel-actions">
+                  <span id="messagePanelHint">尚未选择会话</span>
+                  <button id="closeMessageConversationBtn" class="ghost-btn" type="button" hidden>退出会话</button>
+                </div>
               </div>
               <div id="messageList" class="message-list"></div>
               <form id="messageForm" class="message-form">
