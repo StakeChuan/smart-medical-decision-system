@@ -527,15 +527,25 @@ def get_dashscope_client() -> OpenAI:
 
 
 def build_fallback_full_report(
+    patient_summary: str,
+    key_findings: str,
     possible_diseases: str,
     suggested_checks: str,
+    risk_level: str,
+    urgency_level: str,
     treatment_advice: str,
+    follow_up_advice: str,
     risk_warning: str,
 ) -> str:
     return (
+        f"患者摘要：{patient_summary}\n"
+        f"关键发现：{key_findings}\n"
         f"可能疾病：{possible_diseases}\n"
         f"建议检查：{suggested_checks}\n"
+        f"风险等级：{risk_level}\n"
+        f"紧急程度：{urgency_level}\n"
         f"辅助建议：{treatment_advice}\n"
+        f"复诊建议：{follow_up_advice}\n"
         f"风险提示：{risk_warning}\n\n"
         "声明：本系统输出仅供医生辅助参考，不能替代医生诊断。"
     )
@@ -548,30 +558,101 @@ def parse_json_content(raw_content: str) -> dict[str, Any]:
         if content.startswith("json"):
             content = content[4:]
         content = content.strip()
-    return json.loads(content)
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        start = content.find("{")
+        end = content.rfind("}")
+        if start >= 0 and end > start:
+            return json.loads(content[start : end + 1])
+        raise
+
+
+def clean_report_value(value: Any, fallback: str = "") -> str:
+    if value is None:
+        return fallback
+    if isinstance(value, (list, tuple)):
+        return "；".join(str(item).strip() for item in value if str(item).strip()) or fallback
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value).strip() or fallback
 
 
 def normalize_report_payload(payload: dict[str, Any]) -> dict[str, str]:
-    possible_diseases = str(payload.get("possible_diseases") or payload.get("可能疾病") or "请结合临床信息进一步判断")
-    suggested_checks = str(payload.get("suggested_checks") or payload.get("建议检查") or "建议结合常规检查完善判断")
-    treatment_advice = str(payload.get("treatment_advice") or payload.get("辅助建议") or "请结合医生判断进行个体化处理")
-    risk_warning = str(payload.get("risk_warning") or payload.get("风险提示") or "如症状持续加重，请及时线下就医")
-    full_report = str(payload.get("full_report") or payload.get("完整报告") or "").strip()
+    structured_keys = [
+        "patient_summary",
+        "患者摘要",
+        "key_findings",
+        "关键发现",
+        "主要问题",
+        "possible_diseases",
+        "可能疾病",
+        "suggested_checks",
+        "建议检查",
+        "risk_level",
+        "风险等级",
+        "urgency_level",
+        "紧急程度",
+        "treatment_advice",
+        "辅助建议",
+        "处置建议",
+        "follow_up_advice",
+        "复诊建议",
+        "转诊建议",
+        "risk_warning",
+        "风险提示",
+    ]
+    has_structured_input = any(clean_report_value(payload.get(key)) for key in structured_keys)
+    patient_summary = clean_report_value(payload.get("patient_summary") or payload.get("患者摘要"), "请结合问诊信息完善患者摘要" if has_structured_input else "")
+    key_findings = clean_report_value(payload.get("key_findings") or payload.get("关键发现") or payload.get("主要问题"), "请结合主诉、症状和检查结果综合判断" if has_structured_input else "")
+    possible_diseases = clean_report_value(payload.get("possible_diseases") or payload.get("可能疾病"), "请结合临床信息进一步判断" if has_structured_input else "")
+    suggested_checks = clean_report_value(payload.get("suggested_checks") or payload.get("建议检查"), "建议结合常规检查完善判断" if has_structured_input else "")
+    risk_level = clean_report_value(payload.get("risk_level") or payload.get("风险等级"), "待评估" if has_structured_input else "")
+    urgency_level = clean_report_value(payload.get("urgency_level") or payload.get("紧急程度"), "常规" if has_structured_input else "")
+    treatment_advice = clean_report_value(payload.get("treatment_advice") or payload.get("辅助建议") or payload.get("处置建议"), "请结合医生判断进行个体化处理" if has_structured_input else "")
+    follow_up_advice = clean_report_value(payload.get("follow_up_advice") or payload.get("复诊建议") or payload.get("转诊建议"), "建议根据病情变化安排复诊或转诊" if has_structured_input else "")
+    risk_warning = clean_report_value(payload.get("risk_warning") or payload.get("风险提示"), "如症状持续加重，请及时线下就医" if has_structured_input else "")
+    full_report = clean_report_value(payload.get("full_report") or payload.get("完整报告"))
 
     if not full_report:
         full_report = build_fallback_full_report(
+            patient_summary,
+            key_findings,
             possible_diseases,
             suggested_checks,
+            risk_level,
+            urgency_level,
             treatment_advice,
+            follow_up_advice,
             risk_warning,
         )
 
     return {
-        "possible_diseases": possible_diseases.strip(),
-        "suggested_checks": suggested_checks.strip(),
-        "treatment_advice": treatment_advice.strip(),
-        "risk_warning": risk_warning.strip(),
-        "full_report": full_report.strip(),
+        "patient_summary": patient_summary,
+        "key_findings": key_findings,
+        "possible_diseases": possible_diseases,
+        "suggested_checks": suggested_checks,
+        "risk_level": risk_level,
+        "urgency_level": urgency_level,
+        "treatment_advice": treatment_advice,
+        "follow_up_advice": follow_up_advice,
+        "risk_warning": risk_warning,
+        "full_report": full_report,
+        "structured_summary": json.dumps(
+            {
+                "patient_summary": patient_summary,
+                "key_findings": key_findings,
+                "possible_diseases": possible_diseases,
+                "suggested_checks": suggested_checks,
+                "risk_level": risk_level,
+                "urgency_level": urgency_level,
+                "treatment_advice": treatment_advice,
+                "follow_up_advice": follow_up_advice,
+                "risk_warning": risk_warning,
+                "full_report": full_report,
+            },
+            ensure_ascii=False,
+        ),
     }
 
 
@@ -589,14 +670,20 @@ def generate_ai_report_with_qwen(consultation: models.Consultation) -> dict[str,
 要求：
 1. 仅输出 JSON，不要输出 Markdown，不要输出额外解释。
 2. JSON 必须包含以下字段：
+   patient_summary
+   key_findings
    possible_diseases
    suggested_checks
+   risk_level
+   urgency_level
    treatment_advice
+   follow_up_advice
    risk_warning
    full_report
-3. full_report 请整理为适合医生阅读的完整中文报告。
-4. 内容必须包含“仅供医生辅助参考，不能替代医生诊断”的含义。
-5. 必须严格使用患者基础信息中的性别和年龄，不要自行推断或改写患者性别。
+3. risk_level 只能为“低”“中”“高”或“待评估”；urgency_level 只能为“常规”“尽快”“紧急”。
+4. full_report 请整理为适合医生阅读的完整中文报告，内容包含患者摘要、关键发现、可能疾病、建议检查、处置建议、复诊/转诊建议和风险提示。
+5. 内容必须包含“仅供医生辅助参考，不能替代医生诊断”的含义。
+6. 必须严格使用患者基础信息中的性别和年龄，不要自行推断或改写患者性别。
 
 患者基础信息：
 姓名：{patient_name}
@@ -655,20 +742,32 @@ def build_ai_report(consultation_id: int, db: Session, current_user: models.User
 
     if consultation.ai_report:
         db_report = consultation.ai_report
+        db_report.patient_summary = report_payload["patient_summary"]
+        db_report.key_findings = report_payload["key_findings"]
         db_report.possible_diseases = report_payload["possible_diseases"]
         db_report.suggested_checks = report_payload["suggested_checks"]
+        db_report.risk_level = report_payload["risk_level"]
+        db_report.urgency_level = report_payload["urgency_level"]
         db_report.treatment_advice = report_payload["treatment_advice"]
+        db_report.follow_up_advice = report_payload["follow_up_advice"]
         db_report.risk_warning = report_payload["risk_warning"]
         db_report.full_report = report_payload["full_report"]
+        db_report.structured_summary = report_payload["structured_summary"]
         db_report.created_at = datetime.now()
     else:
         db_report = models.AiReport(
             consultation_id=consultation.id,
+            patient_summary=report_payload["patient_summary"],
+            key_findings=report_payload["key_findings"],
             possible_diseases=report_payload["possible_diseases"],
             suggested_checks=report_payload["suggested_checks"],
+            risk_level=report_payload["risk_level"],
+            urgency_level=report_payload["urgency_level"],
             treatment_advice=report_payload["treatment_advice"],
+            follow_up_advice=report_payload["follow_up_advice"],
             risk_warning=report_payload["risk_warning"],
             full_report=report_payload["full_report"],
+            structured_summary=report_payload["structured_summary"],
         )
         db.add(db_report)
     db.commit()
@@ -1415,9 +1514,14 @@ def export_reports(
             patient_name or "",
             doctor_id or "",
             doctor_real_name or doctor_username or "",
+            report.patient_summary or "",
+            report.key_findings or "",
             report.possible_diseases or "",
             report.suggested_checks or "",
+            report.risk_level or "",
+            report.urgency_level or "",
             report.treatment_advice or "",
+            report.follow_up_advice or "",
             report.risk_warning or "",
             report.full_report or "",
             format_export_datetime(report.created_at),
@@ -1427,7 +1531,7 @@ def export_reports(
     write_operation_log(db, current_admin, "导出", "数据导出", "CSV", "reports", "导出AI报告 CSV")
     return csv_export_response(
         "admin_ai_reports.csv",
-        ["报告ID", "问诊ID", "患者ID", "患者姓名", "医生ID", "医生姓名", "可能疾病", "建议检查", "辅助建议", "风险提示", "完整报告", "创建时间"],
+        ["报告ID", "问诊ID", "患者ID", "患者姓名", "医生ID", "医生姓名", "患者摘要", "关键发现", "可能疾病", "建议检查", "风险等级", "紧急程度", "辅助建议", "复诊建议", "风险提示", "完整报告", "创建时间"],
         export_rows,
     )
 

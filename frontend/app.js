@@ -35,6 +35,7 @@ const state = {
   isSavingConsultation: false,
   isRegeneratingReport: false,
   regeneratingHistoryIndex: null,
+  expandedHistoryReportIndex: null,
   lastReport: null,
   lastReportConsultationId: null,
   clearReportOnNextOpen: false,
@@ -467,16 +468,124 @@ async function changePassword(event) {
 
 function getReportText(report) {
   if (!report) return "";
+  const patientSummary = report["患者摘要"] || report.patient_summary || "";
+  const keyFindings = report["关键发现"] || report.key_findings || "";
+  const riskLevel = report["风险等级"] || report.risk_level || "";
+  const urgencyLevel = report["紧急程度"] || report.urgency_level || "";
+  const followUpAdvice = report["复诊建议"] || report.follow_up_advice || "";
   return (
     report["完整报告"] ||
     report.full_report ||
     [
+      `患者摘要：${patientSummary}`,
+      `关键发现：${keyFindings}`,
       `可能疾病：${report["可能疾病"] || report.possible_diseases || ""}`,
       `建议检查：${report["建议检查"] || report.suggested_checks || ""}`,
+      `风险等级：${riskLevel}`,
+      `紧急程度：${urgencyLevel}`,
       `辅助建议：${report["辅助建议"] || report.treatment_advice || ""}`,
+      `复诊建议：${followUpAdvice}`,
       `风险提示：${report["风险提示"] || report.risk_warning || ""}`,
-    ].join("\n")
+    ].filter((line) => !line.endsWith("：")).join("\n")
   );
+}
+
+function getReportField(report, chineseKey, englishKey, fallback = "未填写") {
+  const value = report?.[chineseKey] ?? report?.[englishKey];
+  return value === null || value === undefined || value === "" ? fallback : value;
+}
+
+function getRiskClass(value) {
+  if (value === "高" || value === "紧急") return "is-high";
+  if (value === "中" || value === "尽快") return "is-medium";
+  if (value === "低" || value === "常规") return "is-low";
+  return "";
+}
+
+function renderReportBadge(label, value) {
+  const text = value || "待评估";
+  return `<span class="report-badge ${getRiskClass(text)}"><small>${label}</small>${escapeHtml(text)}</span>`;
+}
+
+function renderReportSection(title, value, className = "") {
+  const text = value || "未填写";
+  return `
+    <section class="report-card ${className}">
+      <h4>${escapeHtml(title)}</h4>
+      <p>${escapeHtml(text)}</p>
+    </section>
+  `;
+}
+
+function renderStructuredReport(report) {
+  if (!report) return "";
+  const patientSummary = getReportField(report, "患者摘要", "patient_summary", "");
+  const keyFindings = getReportField(report, "关键发现", "key_findings", "");
+  const possibleDiseases = getReportField(report, "可能疾病", "possible_diseases", "");
+  const suggestedChecks = getReportField(report, "建议检查", "suggested_checks", "");
+  const riskLevel = getReportField(report, "风险等级", "risk_level", "待评估");
+  const urgencyLevel = getReportField(report, "紧急程度", "urgency_level", "常规");
+  const treatmentAdvice = getReportField(report, "辅助建议", "treatment_advice", "");
+  const followUpAdvice = getReportField(report, "复诊建议", "follow_up_advice", "");
+  const riskWarning = getReportField(report, "风险提示", "risk_warning", "");
+  const hasStructuredFields = [
+    patientSummary,
+    keyFindings,
+    possibleDiseases,
+    suggestedChecks,
+    treatmentAdvice,
+    followUpAdvice,
+    riskWarning,
+  ].some(Boolean);
+
+  if (!hasStructuredFields) {
+    return `<pre class="report-legacy-text">${escapeHtml(getReportText(report))}</pre>`;
+  }
+
+  return `
+    <div class="report-summary-head">
+      ${renderReportBadge("风险等级", riskLevel)}
+      ${renderReportBadge("紧急程度", urgencyLevel)}
+    </div>
+    <div class="report-card-grid">
+      ${renderReportSection("患者摘要", patientSummary, "wide-report-card")}
+      ${renderReportSection("关键发现", keyFindings, "wide-report-card")}
+      ${renderReportSection("可能疾病", possibleDiseases)}
+      ${renderReportSection("建议检查", suggestedChecks)}
+      ${renderReportSection("辅助建议", treatmentAdvice)}
+      ${renderReportSection("复诊 / 转诊建议", followUpAdvice)}
+      ${renderReportSection("风险提示", riskWarning, "wide-report-card warning-report-card")}
+    </div>
+    <p class="report-disclaimer">本系统输出仅供医生辅助参考，不能替代医生诊断。</p>
+  `;
+}
+
+function getReportPreviewHtml(report) {
+  if (!report) return "<p>暂无AI报告</p>";
+  const riskLevel = report["风险等级"] || report.risk_level || "待评估";
+  const urgencyLevel = report["紧急程度"] || report.urgency_level || "常规";
+  const possibleDiseases = report["可能疾病"] || report.possible_diseases || "暂无可能疾病摘要";
+  const suggestedChecks = report["建议检查"] || report.suggested_checks || "暂无建议检查摘要";
+  return `
+    <div class="history-report-badges">
+      ${renderReportBadge("风险", riskLevel)}
+      ${renderReportBadge("紧急", urgencyLevel)}
+    </div>
+    <p><strong>可能疾病：</strong>${escapeHtml(possibleDiseases)}</p>
+    <p><strong>建议检查：</strong>${escapeHtml(suggestedChecks)}</p>
+  `;
+}
+
+function getFullReportHtml(report) {
+  if (!report) return "";
+  const fullText = report["完整报告"] || report.full_report || "";
+  return `
+    <div class="history-full-report">
+      <div class="history-report-title">完整AI报告</div>
+      ${renderStructuredReport(report)}
+      ${fullText ? `<details class="history-full-report-text"><summary>查看原始完整文本</summary><pre>${escapeHtml(fullText)}</pre></details>` : ""}
+    </div>
+  `;
 }
 
 function updateReportActions() {
@@ -507,7 +616,7 @@ function renderReport(report) {
   state.lastReportConsultationId = report["问诊ID"] || report.consultation_id || state.lastReportConsultationId;
   $("#reportTime").textContent = formatDateTime(report["创建时间"] || report.created_at || new Date());
   $("#reportContent").className = "report-content";
-  $("#reportContent").textContent = getReportText(report);
+  $("#reportContent").innerHTML = renderStructuredReport(report);
   updateReportActions();
 }
 
@@ -1386,8 +1495,8 @@ function renderPatientHistory(consultations, selector) {
     .map((item, index) => {
       const consultationId = item["问诊ID"] || item.id;
       const report = item["AI报告"] || item.ai_report;
-      const reportText = getReportText(report) || "暂无AI报告";
       const isRegenerating = state.regeneratingHistoryIndex === index;
+      const isExpanded = state.expandedHistoryReportIndex === index;
       const hasReport = Boolean(getReportText(report));
       const visitNo = consultations.length - index;
       return `
@@ -1400,6 +1509,7 @@ function renderPatientHistory(consultations, selector) {
                 <p class="history-meta">${formatDateTime(item["创建时间"] || item.created_at)} · ${hasReport ? "已生成 AI 报告" : "暂无 AI 报告"}</p>
               </div>
               <div class="row-actions">
+                <button class="ghost-btn" type="button" onclick="toggleHistoryFullReport(${index})" ${hasReport ? "" : "disabled"}>${isExpanded ? "收起完整报告" : "查看完整报告"}</button>
                 <button class="ghost-btn" type="button" onclick="copyHistoryReport(${index})">复制报告</button>
                 <button class="ghost-btn" type="button" onclick="printHistoryReport(${index})">打印报告</button>
                 <button class="ghost-btn" type="button" onclick="regenerateHistoryReport(${index})" ${isRegenerating ? "disabled" : ""}>${isRegenerating ? "生成中..." : "重新生成报告"}</button>
@@ -1415,8 +1525,9 @@ function renderPatientHistory(consultations, selector) {
             </div>
             <div class="history-report-preview">
               <div class="history-report-title">AI报告摘要</div>
-              <pre>${escapeHtml(reportText)}</pre>
+              ${getReportPreviewHtml(report)}
             </div>
+            ${isExpanded ? getFullReportHtml(report) : ""}
           </div>
         </div>
       `;
@@ -1424,6 +1535,17 @@ function renderPatientHistory(consultations, selector) {
     .join("");
   list.innerHTML = `${summaryHtml}<div class="history-timeline-list">${timelineHtml}</div>`;
 }
+
+window.toggleHistoryFullReport = function toggleHistoryFullReport(index) {
+  const consultation = state.historyConsultations[index];
+  const report = consultation?.["AI报告"] || consultation?.ai_report;
+  if (!getReportText(report)) {
+    toast("这条问诊还没有生成 AI 报告");
+    return;
+  }
+  state.expandedHistoryReportIndex = state.expandedHistoryReportIndex === index ? null : index;
+  renderPatientHistory(state.historyConsultations, isAdmin() ? "#patientHistoryList" : "#doctorHistoryList");
+};
 
 window.copyHistoryReport = function copyHistoryReport(index) {
   const consultation = state.historyConsultations[index];

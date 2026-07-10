@@ -77,6 +77,12 @@ class AiReport(Base):
         ForeignKey("consultations.id", ondelete="CASCADE"),
         nullable=False,
     )
+    patient_summary = Column(Text)
+    key_findings = Column(Text)
+    risk_level = Column(String(20))
+    urgency_level = Column(String(20))
+    follow_up_advice = Column(Text)
+    structured_summary = Column(Text)
     possible_diseases = Column(Text)
     suggested_checks = Column(Text)
     treatment_advice = Column(Text)

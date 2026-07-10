@@ -59,6 +59,12 @@ CREATE TABLE IF NOT EXISTS consultations (
 CREATE TABLE IF NOT EXISTS ai_reports (
     id INT PRIMARY KEY AUTO_INCREMENT,
     consultation_id INT NOT NULL UNIQUE,
+    patient_summary TEXT,
+    key_findings TEXT,
+    risk_level VARCHAR(20),
+    urgency_level VARCHAR(20),
+    follow_up_advice TEXT,
+    structured_summary TEXT,
     possible_diseases TEXT,
     suggested_checks TEXT,
     treatment_advice TEXT,

@@ -232,6 +232,12 @@ class AiDecisionRequest(AppBaseModel):
 class AiReportOut(AppOrmModel):
     id: int = Field(..., alias="报告ID")
     consultation_id: int = Field(..., alias="问诊ID")
+    patient_summary: str | None = Field(None, alias="患者摘要")
+    key_findings: str | None = Field(None, alias="关键发现")
+    risk_level: str | None = Field(None, alias="风险等级")
+    urgency_level: str | None = Field(None, alias="紧急程度")
+    follow_up_advice: str | None = Field(None, alias="复诊建议")
+    structured_summary: str | None = Field(None, alias="结构化摘要")
     possible_diseases: str | None = Field(None, alias="可能疾病")
     suggested_checks: str | None = Field(None, alias="建议检查")
     treatment_advice: str | None = Field(None, alias="辅助建议")
