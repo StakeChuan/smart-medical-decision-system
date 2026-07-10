@@ -275,6 +275,35 @@ class DashboardPatientOut(AppBaseModel):
     last_consultation_time: datetime | None = Field(None, alias="最近问诊时间")
 
 
+class DoctorDashboardPatientOut(AppBaseModel):
+    patient_id: int = Field(..., alias="患者ID")
+    name: str = Field(..., alias="姓名")
+    gender: str | None = Field(None, alias="性别")
+    age: int | None = Field(None, alias="年龄")
+    phone: str | None = Field(None, alias="电话")
+    created_at: datetime | None = Field(None, alias="创建时间")
+    consultation_count: int = Field(0, alias="问诊次数")
+    last_consultation_time: datetime | None = Field(None, alias="最近问诊时间")
+
+
+class DoctorDashboardConsultationOut(AppBaseModel):
+    consultation_id: int = Field(..., alias="问诊ID")
+    patient_id: int = Field(..., alias="患者ID")
+    patient_name: str = Field(..., alias="患者姓名")
+    chief_complaint: str | None = Field(None, alias="主诉")
+    has_ai_report: bool = Field(False, alias="是否生成AI报告")
+    created_at: datetime | None = Field(None, alias="创建时间")
+
+
+class DoctorDashboardOut(AppBaseModel):
+    patient_count: int = Field(0, alias="患者总数")
+    consultation_count: int = Field(0, alias="问诊总数")
+    ai_report_count: int = Field(0, alias="AI报告总数")
+    today_consultation_count: int = Field(0, alias="今日问诊数")
+    recent_patients: list[DoctorDashboardPatientOut] = Field(default_factory=list, alias="最近患者")
+    recent_consultations: list[DoctorDashboardConsultationOut] = Field(default_factory=list, alias="最近问诊")
+
+
 class AdminDashboardOut(AppBaseModel):
     doctor_count: int = Field(..., alias="医生总数")
     patient_count: int = Field(..., alias="患者总数")

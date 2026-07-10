@@ -312,6 +312,52 @@ select {
   align-items: start;
 }
 
+.doctor-home-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.doctor-home-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.doctor-home-item p {
+  grid-column: 1 / -1;
+}
+
+.doctor-home-item .ghost-btn {
+  grid-row: 1;
+  grid-column: 2;
+  white-space: nowrap;
+}
+
+.doctor-quick-actions {
+  margin-top: 18px;
+}
+
+.quick-action {
+  min-height: 58px;
+  padding: 14px;
+  border: 0;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.quick-action:hover {
+  background: #eef4fb;
+}
+
 .export-panel {
   margin-top: 18px;
 }
@@ -1226,6 +1272,7 @@ select:focus {
 @media (max-width: 1100px) {
   .metrics-admin,
   .overview-grid,
+  .doctor-home-grid,
   .admin-grid,
   .settings-grid,
   .message-layout,
@@ -1308,8 +1355,15 @@ select:focus {
 
   .patient-row,
   .rank-item,
+  .doctor-home-item,
   .log-item {
     grid-template-columns: 1fr;
+  }
+
+  .doctor-home-item .ghost-btn {
+    grid-row: auto;
+    grid-column: auto;
+    width: 100%;
   }
 
   .log-meta {

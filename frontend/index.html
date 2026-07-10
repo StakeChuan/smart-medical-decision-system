@@ -71,6 +71,18 @@
                 <strong id="patientCount">0</strong>
               </div>
               <div class="metric">
+                <span>今日问诊</span>
+                <strong id="doctorTodayConsultationCount">0</strong>
+              </div>
+              <div class="metric">
+                <span>问诊总数</span>
+                <strong id="doctorConsultationCount">0</strong>
+              </div>
+              <div class="metric">
+                <span>AI报告</span>
+                <strong id="doctorReportCount">0</strong>
+              </div>
+              <div class="metric">
                 <span>后端状态</span>
                 <strong id="backendState">检测中</strong>
               </div>
@@ -84,6 +96,30 @@
               <div>患者归属</div>
               <div>问诊分析</div>
               <div>AI报告</div>
+            </div>
+            <div class="doctor-home-grid">
+              <div class="panel">
+                <div class="panel-head">
+                  <h3>最近患者</h3>
+                  <span>按新增时间</span>
+                </div>
+                <div id="doctorRecentPatients" class="list"></div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-head">
+                  <h3>最近问诊</h3>
+                  <span>最近 5 条记录</span>
+                </div>
+                <div id="doctorRecentConsultations" class="list"></div>
+              </div>
+            </div>
+
+            <div class="workflow doctor-quick-actions">
+              <button class="quick-action" type="button" data-target="patients">患者管理</button>
+              <button class="quick-action" type="button" data-target="consultation">问诊录入</button>
+              <button class="quick-action" type="button" data-target="messages">消息中心</button>
+              <button class="quick-action" type="button" data-target="settings">个人中心</button>
             </div>
           </div>
 

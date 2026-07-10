@@ -977,6 +977,118 @@ def list_patient_consultations(
 
 
 @app.get(
+    "/doctor/dashboard",
+    response_model=schemas.DoctorDashboardOut,
+    summary="医生端工作台统计",
+    tags=["医生工作台"],
+)
+def doctor_dashboard(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != "doctor":
+        raise_http_error(status.HTTP_403_FORBIDDEN, "只有医生可以访问医生工作台")
+
+    today = date.today()
+    patient_count = (
+        db.query(func.count(models.Patient.id))
+        .filter(models.Patient.doctor_id == current_user.id)
+        .scalar()
+        or 0
+    )
+    consultation_count = (
+        db.query(func.count(models.Consultation.id))
+        .filter(models.Consultation.doctor_id == current_user.id)
+        .scalar()
+        or 0
+    )
+    ai_report_count = (
+        db.query(func.count(models.AiReport.id))
+        .join(models.Consultation, models.AiReport.consultation_id == models.Consultation.id)
+        .filter(models.Consultation.doctor_id == current_user.id)
+        .scalar()
+        or 0
+    )
+    today_consultation_count = (
+        db.query(func.count(models.Consultation.id))
+        .filter(models.Consultation.doctor_id == current_user.id)
+        .filter(func.date(models.Consultation.created_at) == today)
+        .scalar()
+        or 0
+    )
+
+    patient_stats = (
+        db.query(
+            models.Consultation.patient_id.label("patient_id"),
+            func.count(models.Consultation.id).label("consultation_count"),
+            func.max(models.Consultation.created_at).label("last_consultation_time"),
+        )
+        .filter(models.Consultation.doctor_id == current_user.id)
+        .group_by(models.Consultation.patient_id)
+        .subquery()
+    )
+    recent_patient_rows = (
+        db.query(
+            models.Patient,
+            func.coalesce(patient_stats.c.consultation_count, 0).label("consultation_count"),
+            patient_stats.c.last_consultation_time.label("last_consultation_time"),
+        )
+        .outerjoin(patient_stats, patient_stats.c.patient_id == models.Patient.id)
+        .filter(models.Patient.doctor_id == current_user.id)
+        .order_by(models.Patient.created_at.desc(), models.Patient.id.desc())
+        .limit(5)
+        .all()
+    )
+    recent_patients = [
+        {
+            "patient_id": patient.id,
+            "name": patient.name,
+            "gender": patient.gender,
+            "age": patient.age,
+            "phone": patient.phone,
+            "created_at": patient.created_at,
+            "consultation_count": int(consultation_count_value or 0),
+            "last_consultation_time": last_consultation_time,
+        }
+        for patient, consultation_count_value, last_consultation_time in recent_patient_rows
+    ]
+
+    recent_consultation_rows = (
+        db.query(
+            models.Consultation,
+            models.Patient.name.label("patient_name"),
+            models.AiReport.id.label("report_id"),
+        )
+        .join(models.Patient, models.Consultation.patient_id == models.Patient.id)
+        .outerjoin(models.AiReport, models.AiReport.consultation_id == models.Consultation.id)
+        .filter(models.Consultation.doctor_id == current_user.id)
+        .order_by(models.Consultation.created_at.desc(), models.Consultation.id.desc())
+        .limit(5)
+        .all()
+    )
+    recent_consultations = [
+        {
+            "consultation_id": consultation.id,
+            "patient_id": consultation.patient_id,
+            "patient_name": patient_name,
+            "chief_complaint": consultation.chief_complaint,
+            "has_ai_report": report_id is not None,
+            "created_at": consultation.created_at,
+        }
+        for consultation, patient_name, report_id in recent_consultation_rows
+    ]
+
+    return {
+        "patient_count": int(patient_count),
+        "consultation_count": int(consultation_count),
+        "ai_report_count": int(ai_report_count),
+        "today_consultation_count": int(today_consultation_count),
+        "recent_patients": recent_patients,
+        "recent_consultations": recent_consultations,
+    }
+
+
+@app.get(
     "/admin/dashboard",
     response_model=schemas.AdminDashboardOut,
     summary="管理员平台概览统计",

@@ -19,6 +19,7 @@ const state = {
   selectedHistoryPatient: null,
   historyConsultations: [],
   dashboardStats: null,
+  doctorDashboardStats: null,
   operationLogs: {
     items: [],
     total: 0,
@@ -134,6 +135,7 @@ function resetRuntimeState() {
   state.selectedHistoryPatient = null;
   state.historyConsultations = [];
   state.dashboardStats = null;
+  state.doctorDashboardStats = null;
   state.operationLogs = {
     items: [],
     total: 0,
@@ -510,7 +512,68 @@ function renderReport(report) {
 }
 
 function renderDoctorDashboard() {
-  $("#patientCount").textContent = state.patients.length;
+  const stats = state.doctorDashboardStats;
+  $("#patientCount").textContent = stats?.["患者总数"] ?? stats?.patient_count ?? state.patients.length;
+  $("#doctorTodayConsultationCount").textContent = stats?.["今日问诊数"] ?? stats?.today_consultation_count ?? 0;
+  $("#doctorConsultationCount").textContent = stats?.["问诊总数"] ?? stats?.consultation_count ?? 0;
+  $("#doctorReportCount").textContent = stats?.["AI报告总数"] ?? stats?.ai_report_count ?? 0;
+  renderDoctorRecentPatients(stats?.["最近患者"] || stats?.recent_patients || []);
+  renderDoctorRecentConsultations(stats?.["最近问诊"] || stats?.recent_consultations || []);
+}
+
+function renderDoctorRecentPatients(patients) {
+  const list = $("#doctorRecentPatients");
+  if (!list) return;
+  if (!patients.length) {
+    list.innerHTML = '<div class="report-empty">暂无最近患者。</div>';
+    return;
+  }
+
+  list.innerHTML = patients
+    .map((patient) => {
+      const patientId = patient["患者ID"] || patient.patient_id;
+      const name = patient["姓名"] || patient.name || "未命名患者";
+      const gender = patient["性别"] || patient.gender || "未填";
+      const age = patient["年龄"] ?? patient.age ?? "未填";
+      const count = patient["问诊次数"] ?? patient.consultation_count ?? 0;
+      const lastTime = patient["最近问诊时间"] || patient.last_consultation_time;
+      return `
+        <div class="stack-item doctor-home-item">
+          <strong>${escapeHtml(name)}</strong>
+          <p>${escapeHtml(gender)} / ${escapeHtml(age)}岁 · 问诊 ${count} 次</p>
+          <p>最近问诊：${formatDateTime(lastTime)}</p>
+          <button class="ghost-btn" type="button" onclick="showPatientHistory(${patientId})">查看详情</button>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderDoctorRecentConsultations(consultations) {
+  const list = $("#doctorRecentConsultations");
+  if (!list) return;
+  if (!consultations.length) {
+    list.innerHTML = '<div class="report-empty">暂无最近问诊。</div>';
+    return;
+  }
+
+  list.innerHTML = consultations
+    .map((item) => {
+      const patientId = item["患者ID"] || item.patient_id;
+      const patientName = item["患者姓名"] || item.patient_name || "未命名患者";
+      const chiefComplaint = item["主诉"] || item.chief_complaint || "未填写主诉";
+      const hasReport = item["是否生成AI报告"] ?? item.has_ai_report;
+      const createdAt = item["创建时间"] || item.created_at;
+      return `
+        <div class="stack-item doctor-home-item">
+          <strong>${escapeHtml(patientName)}</strong>
+          <p>${escapeHtml(chiefComplaint)}</p>
+          <p>${formatDateTime(createdAt)} · ${hasReport ? "已生成AI报告" : "暂无AI报告"}</p>
+          <button class="ghost-btn" type="button" onclick="showPatientHistory(${patientId})">查看历史</button>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 function renderAdminDashboard() {
@@ -844,6 +907,7 @@ window.deletePatient = async function deletePatient(id) {
     toast("患者已删除");
     resetPatientForm();
     await loadPatients();
+    if (!isAdmin()) await loadDoctorDashboardData();
   } catch (error) {
     toast(error.message);
   }
@@ -878,6 +942,7 @@ async function savePatient(event) {
     resetPatientForm();
     await loadPatients();
     if (isAdmin()) await loadDashboardData();
+    if (!isAdmin()) await loadDoctorDashboardData();
   } catch (error) {
     toast(error.message);
   }
@@ -923,6 +988,8 @@ async function saveConsultation(event) {
     if (isAdmin()) {
       await loadDashboardData();
       await loadDoctorData();
+    } else {
+      await loadDoctorDashboardData();
     }
   } catch (error) {
     toast(error.message);
@@ -939,6 +1006,12 @@ async function loadDashboardData() {
   showLoading("#activePatientList");
   state.dashboardStats = await request("/admin/dashboard");
   renderAdminDashboard();
+}
+
+async function loadDoctorDashboardData() {
+  if (isAdmin()) return;
+  state.doctorDashboardStats = await request("/doctor/dashboard");
+  renderDoctorDashboard();
 }
 
 function getDoctorFiltersFromInputs() {
@@ -1391,6 +1464,8 @@ window.regenerateHistoryReport = async function regenerateHistoryReport(index) {
     if (isAdmin()) {
       await loadDashboardData();
       await loadDoctorData();
+    } else {
+      await loadDoctorDashboardData();
     }
     if (state.selectedHistoryPatient) {
       const patientId = state.selectedHistoryPatient["患者ID"] || state.selectedHistoryPatient.id;
@@ -1440,6 +1515,8 @@ async function regenerateCurrentReport() {
     if (isAdmin()) {
       await loadDashboardData();
       await loadDoctorData();
+    } else {
+      await loadDoctorDashboardData();
     }
   } catch (error) {
     renderReport(state.lastReport);
@@ -1581,6 +1658,8 @@ async function refreshData() {
           await window.selectDoctor(state.selectedDoctor["医生ID"] || state.selectedDoctor.doctor_id);
         }
       }
+    } else if (currentView === "dashboard") {
+      await loadDoctorDashboardData();
     }
 
     if (currentView === "patientHistory" && state.selectedHistoryPatient) {
@@ -1603,6 +1682,8 @@ async function init() {
       syncDoctorFiltersToInputs();
       await Promise.all([loadDashboardData(), loadDoctorData()]);
       switchView("dashboard");
+    } else {
+      await loadDoctorDashboardData();
     }
   } catch (error) {
     toast(error.message || "数据加载失败，请确认后端已启动");
@@ -1625,6 +1706,9 @@ function bindEvents() {
       if (item.dataset.target === "dashboard" && isAdmin() && !state.dashboardStats) {
         await loadDashboardData();
       }
+      if (item.dataset.target === "dashboard" && !isAdmin()) {
+        await loadDoctorDashboardData();
+      }
       if (item.dataset.target === "doctorData" && isAdmin() && !state.doctors.length) {
         await loadDoctorData();
       }
@@ -1635,6 +1719,9 @@ function bindEvents() {
         await loadCurrentUser();
       }
     });
+  });
+  document.querySelectorAll(".quick-action").forEach((button) => {
+    button.addEventListener("click", () => switchView(button.dataset.target));
   });
   document.querySelectorAll("[data-export-type]").forEach((button) => {
     button.addEventListener("click", () => downloadAdminExport(button.dataset.exportType));
