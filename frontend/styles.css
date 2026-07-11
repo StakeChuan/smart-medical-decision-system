@@ -1,15 +1,22 @@
 :root {
   color-scheme: light;
   font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-  --bg: #f5f7fb;
+  --bg: #f4f7f9;
   --panel: #ffffff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --line: #d9e1ec;
-  --primary: #1976d2;
-  --primary-dark: #0f4c81;
-  --accent: #0f9f8f;
-  --danger: #c2410c;
+  --surface-muted: #f7fafb;
+  --text: #17252e;
+  --muted: #667784;
+  --line: #dce4e8;
+  --line-strong: #c9d5da;
+  --primary: #176b87;
+  --primary-dark: #104e65;
+  --accent: #16856b;
+  --warning: #c47a12;
+  --danger: #c83e4d;
+  --sidebar: #123047;
+  --focus: rgba(23, 107, 135, 0.18);
+  --shadow-sm: 0 1px 2px rgba(23, 37, 46, 0.04);
+  --shadow-md: 0 8px 24px rgba(23, 37, 46, 0.07);
 }
 
 * {
@@ -21,6 +28,17 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+body:has(.login-screen.active) {
+  overflow: hidden;
+  background: var(--sidebar);
+}
+
+body:has(.login-screen.active) .app-shell {
+  display: none;
 }
 
 button,
@@ -37,7 +55,10 @@ select {
   display: none;
   place-items: center;
   padding: 24px;
-  background: #10233f;
+  background: var(--sidebar);
+  width: 100vw;
+  min-height: 100dvh;
+  overflow-y: auto;
 }
 
 .login-screen.active {
@@ -51,7 +72,8 @@ select {
   padding: 28px;
   background: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 24px 70px rgba(6, 28, 42, 0.28);
 }
 
 .login-brand {
@@ -87,14 +109,18 @@ select {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 240px minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .sidebar {
-  background: #10233f;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--sidebar);
   color: #f8fafc;
-  padding: 24px 18px;
+  padding: 22px 16px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -112,7 +138,7 @@ select {
   display: grid;
   place-items: center;
   border-radius: 8px;
-  background: #15a38f;
+  background: var(--accent);
   font-size: 24px;
   font-weight: 700;
 }
@@ -132,15 +158,18 @@ select {
 
 .nav {
   display: grid;
-  gap: 8px;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nav-item {
   border: 0;
   border-radius: 6px;
-  padding: 11px 12px;
+  min-height: 42px;
+  padding: 10px 12px 10px 16px;
   background: transparent;
-  color: #dbe7f5;
+  color: #d9e5ea;
   text-align: left;
   cursor: pointer;
   position: relative;
@@ -148,8 +177,19 @@ select {
 
 .nav-item.active,
 .nav-item:hover {
-  background: #1f3b61;
+  background: rgba(255, 255, 255, 0.11);
   color: #ffffff;
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: #55c9a9;
 }
 
 .nav-item.has-unread {
@@ -185,16 +225,24 @@ select {
 }
 
 .main {
-  padding: 26px;
+  padding: 0 24px 32px;
   min-width: 0;
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 22px;
+  min-height: 72px;
+  margin: 0 -24px 24px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(244, 247, 249, 0.96);
+  backdrop-filter: blur(10px);
 }
 
 .title-group {
@@ -210,7 +258,8 @@ select {
 
 .topbar h2 {
   margin: 0;
-  font-size: 26px;
+  font-size: 24px;
+  line-height: 32px;
 }
 
 .status-group {
@@ -222,8 +271,9 @@ select {
 .status-dot {
   min-width: 108px;
   padding: 8px 10px;
-  border-radius: 999px;
-  background: #eef2f7;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
   color: var(--muted);
   font-size: 13px;
   text-align: center;
@@ -258,7 +308,7 @@ select {
 .metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(160px, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .metrics-admin {
@@ -270,26 +320,20 @@ select {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(20, 37, 63, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .metric {
-  padding: 18px;
+  min-height: 112px;
+  padding: 18px 20px;
   display: grid;
   gap: 10px;
   position: relative;
-  overflow: hidden;
+  border-top: 3px solid var(--primary);
 }
 
 .metric::after {
-  content: "";
-  position: absolute;
-  right: -18px;
-  bottom: -22px;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: rgba(25, 118, 210, 0.08);
+  display: none;
 }
 
 .metric span {
@@ -298,6 +342,7 @@ select {
 
 .metric strong {
   font-size: 28px;
+  line-height: 36px;
 }
 
 .workflow {
@@ -310,8 +355,9 @@ select {
 .workflow div {
   padding: 18px;
   border-radius: 8px;
-  background: #ffffff;
-  border-left: 4px solid var(--accent);
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
   font-weight: 600;
 }
 
@@ -356,8 +402,9 @@ select {
   min-height: 58px;
   padding: 14px;
   border: 0;
-  border-left: 4px solid var(--accent);
-  border-radius: 8px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
   background: #ffffff;
   color: var(--text);
   font-weight: 700;
@@ -366,7 +413,8 @@ select {
 }
 
 .quick-action:hover {
-  background: #eef4fb;
+  border-color: var(--line-strong);
+  background: #edf6f4;
 }
 
 .export-panel {
@@ -386,8 +434,8 @@ select {
 
 .layout.two-column {
   display: grid;
-  grid-template-columns: minmax(360px, 500px) 1fr;
-  gap: 18px;
+  grid-template-columns: minmax(340px, 440px) minmax(520px, 1fr);
+  gap: 20px;
   align-items: start;
 }
 
@@ -456,7 +504,7 @@ select {
 }
 
 .panel {
-  padding: 18px;
+  padding: 20px;
 }
 
 .panel-head {
@@ -464,12 +512,14 @@ select {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  margin-bottom: 16px;
+  min-height: 32px;
+  margin-bottom: 18px;
 }
 
 .panel-head h3 {
   margin: 0;
   font-size: 18px;
+  line-height: 26px;
 }
 
 .panel-head span {
@@ -564,7 +614,8 @@ input,
 textarea,
 select {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
   border-radius: 6px;
   padding: 10px 11px;
   color: var(--text);
@@ -578,7 +629,7 @@ textarea {
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid rgba(25, 118, 210, 0.18);
+  outline: 3px solid var(--focus);
   border-color: var(--primary);
 }
 
@@ -588,6 +639,8 @@ select:focus {
   border: 0;
   border-radius: 6px;
   cursor: pointer;
+  min-height: 40px;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .primary-btn {
@@ -616,13 +669,21 @@ select:focus {
 
 .ghost-btn {
   padding: 8px 12px;
-  background: #eef2f7;
-  color: #334155;
+  border: 1px solid var(--line-strong);
+  background: #ffffff;
+  color: #324955;
+}
+
+.ghost-btn:hover {
+  border-color: #8fb4c0;
+  background: #eef5f7;
+  color: var(--primary-dark);
 }
 
 .danger-btn {
   padding: 8px 10px;
-  background: #fff1f0;
+  border: 1px solid #f0c4c9;
+  background: #fff5f6;
   color: var(--danger);
 }
 
@@ -638,8 +699,8 @@ select:focus {
 .stack-item {
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fbfdff;
+  border-radius: 6px;
+  background: #ffffff;
 }
 
 .patient-row,
@@ -692,7 +753,14 @@ select:focus {
 .patient-list-row {
   grid-template-columns: minmax(0, 1fr) 210px;
   align-items: center;
-  min-height: 112px;
+  min-height: 96px;
+  padding: 14px 16px;
+}
+
+.patient-list-row:hover {
+  border-color: #9dbbc5;
+  background: #f8fbfc;
+  box-shadow: var(--shadow-sm);
 }
 
 .patient-row-info {
@@ -1263,7 +1331,14 @@ select:focus {
 }
 
 .report-panel {
-  max-width: 920px;
+  max-width: 1040px;
+  margin-inline: auto;
+}
+
+#fullReportDetail .report-panel {
+  max-width: 1120px;
+  border-top: 4px solid var(--primary);
+  box-shadow: var(--shadow-md);
 }
 
 #patientHistory .report-panel {
@@ -1274,9 +1349,9 @@ select:focus {
 .report-content {
   min-height: 280px;
   padding: 16px;
-  border: 1px dashed #b8c4d4;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfdff;
+  background: var(--surface-muted);
   line-height: 1.8;
 }
 
@@ -1286,7 +1361,7 @@ select:focus {
 
 .report-content {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .report-summary-head {
@@ -1301,7 +1376,7 @@ select:focus {
   gap: 7px;
   min-height: 32px;
   padding: 5px 11px;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #334155;
@@ -1335,20 +1410,22 @@ select:focus {
 .report-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .report-card {
-  padding: 14px;
-  border: 1px solid #dbe3ef;
-  border-radius: 8px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   background: #ffffff;
 }
 
 .report-card h4 {
   margin: 0 0 8px;
-  color: #0f2747;
-  font-size: 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--primary-dark);
+  font-size: 16px;
 }
 
 .report-card p,
@@ -1365,8 +1442,9 @@ select:focus {
 }
 
 .warning-report-card {
-  border-color: #f2c7b8;
-  background: #fff8f5;
+  border-color: #e8bd83;
+  border-left: 4px solid var(--warning);
+  background: #fffaf2;
 }
 
 .report-disclaimer {
@@ -1378,12 +1456,12 @@ select:focus {
 .full-report-raw {
   margin-top: 12px;
   padding: 12px 0 0;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--line);
 }
 
 .full-report-raw summary {
   cursor: pointer;
-  color: #1d5f9f;
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -1465,6 +1543,8 @@ select:focus {
   }
 
   .sidebar {
+    position: static;
+    height: auto;
     min-height: auto;
   }
 
@@ -1527,6 +1607,7 @@ select:focus {
   }
 
   .doctor-row-actions {
+    margin-top: 10px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1545,10 +1626,11 @@ select:focus {
   }
 
   .login-screen {
-    padding: 14px;
+    padding: 20px 14px;
   }
 
   .login-card {
+    width: min(100%, 420px);
     padding: 20px;
   }
 
@@ -1580,7 +1662,17 @@ select:focus {
 
   .doctor-scroll-list,
   .doctor-patient-scroll-list {
-    max-height: 420px;
+    max-height: 520px;
+  }
+
+  .doctor-row {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .doctor-row-actions {
+    width: 100%;
+    margin-top: 0;
   }
 
   .patient-scroll-list {
