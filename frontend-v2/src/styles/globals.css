@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  color-scheme: light;
+  --canvas: 195 18% 96%;
+  --surface: 0 0% 100%;
+  --foreground: 195 32% 13%;
+  --muted: 194 11% 43%;
+  --border: 193 15% 87%;
+  --primary: 186 66% 28%;
+  --success: 160 54% 31%;
+  --warning: 35 79% 43%;
+  --danger: 353 50% 48%;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; background: hsl(var(--canvas)); }
+body { margin: 0; min-width: 320px; min-height: 100vh; color: hsl(var(--foreground)); letter-spacing: 0; }
+button, input, textarea, select { font: inherit; letter-spacing: 0; }
+button { cursor: pointer; }
+
+@layer components {
+  .login-page { @apply grid min-h-screen bg-surface lg:grid-cols-[minmax(500px,1.08fr)_minmax(480px,0.92fr)]; }
+  .login-story { @apply relative hidden min-h-screen overflow-hidden bg-[#17343d] px-[8vw] py-12 lg:flex lg:items-center; }
+  .login-form-area { @apply flex min-h-screen items-center justify-center px-5 py-10 sm:px-10; }
+  .story-lines { position: absolute; inset: auto -10% -22% 18%; width: 720px; height: 720px; border: 1px solid rgba(117, 211, 184, .15); transform: rotate(18deg); }
+  .story-lines::before, .story-lines::after { content: ""; position: absolute; inset: 84px; border: 1px solid rgba(117, 211, 184, .1); }
+  .story-lines::after { inset: 170px; }
+  .page-heading { @apply mb-7 flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end; }
+  .metric-grid { @apply grid grid-cols-2 border border-border bg-surface xl:grid-cols-4; }
+  .metric-block { @apply min-h-32 border-b border-r border-border p-4 sm:p-5 xl:border-b-0; }
+  .metric-block:nth-child(2n) { @apply border-r-0 xl:border-r; }
+  .metric-block:last-child { @apply border-r-0; }
+  .dashboard-grid { @apply mt-6 grid items-start gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.75fr)]; }
+  .workspace-section { @apply overflow-hidden border border-border bg-surface; }
+  .section-heading { @apply flex min-h-[76px] items-center justify-between gap-4 border-b border-border px-5 py-4; }
+  .section-heading h2 { @apply text-base font-semibold; }
+  .section-heading p { @apply mt-1 text-xs text-muted; }
+  .clinical-row { @apply grid min-h-[86px] grid-cols-[40px_minmax(0,1fr)] items-center gap-3 px-4 py-3 transition-colors hover:bg-canvas sm:grid-cols-[40px_minmax(0,1fr)_auto] sm:px-5; }
+  .row-icon { @apply grid h-10 w-10 place-items-center rounded-sm bg-primary/10 text-primary; }
+  .row-icon svg { @apply h-4 w-4; }
+  .row-meta { @apply col-start-2 flex items-center gap-2 text-xs text-muted sm:col-start-auto; }
+  .patient-row { @apply flex min-h-[70px] items-center gap-3 px-5 py-3; }
+  .avatar { @apply grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#eaf5f3] text-xs font-semibold text-primary; }
+  .ai-entry { @apply border border-border border-l-[3px] border-l-primary bg-surface p-5; }
+  .ds-section { @apply mb-8 border-t border-border pt-5; }
+  .ds-section > h2 { @apply mb-4 text-base font-semibold; }
+  .ds-section label > span { @apply mb-2 block text-sm font-medium; }
+}
+
+@media (max-width: 639px) {
+  .metric-block { min-height: 118px; }
+  .metric-block strong { font-size: 24px; }
+}
+
+@media print {
+  aside, header, button { display: none !important; }
+  main { padding: 0 !important; }
+}

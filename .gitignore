@@ -8,3 +8,10 @@ node_modules/
 .idea/
 .vscode/
 .DS_Store
+# React / Vite frontend
+frontend-v2/dist/
+frontend-v2/*.tsbuildinfo
+frontend-v2/vite.config.js
+frontend-v2/vite.config.d.ts
+frontend-v2/.env.*
+!frontend-v2/.env.example
