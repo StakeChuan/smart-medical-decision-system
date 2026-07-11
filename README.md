@@ -1,6 +1,11 @@
 # 基于大模型的智慧医疗辅助决策系统
 
-这是一个实训周项目，用于演示医生问诊录入、患者管理、AI 辅助决策报告、管理员医生管理和站内消息沟通等功能。
+这是一个基于 FastAPI、MySQL 和大模型能力构建的智慧医疗辅助决策系统，用于支持医生问诊、患者管理、AI 辅助分析、报告审阅、管理员运营和站内协作。
+
+项目目前同时保留两个前端：
+
+- `frontend`：原生 HTML/CSS/JavaScript 旧版前端，功能完整，可继续使用。
+- `frontend-v2`：React 企业级新版前端，当前已完成登录、全局布局、Design System 和医生工作台，其他业务按阶段迁移。
 
 ## 主要功能
 
@@ -16,7 +21,9 @@
 ## 技术栈
 
 - 后端：FastAPI、SQLAlchemy、PyMySQL
-- 前端：HTML、CSS、JavaScript
+- 旧版前端：HTML、CSS、JavaScript
+- 新版前端：React 18、Vite、TypeScript、TailwindCSS、shadcn/ui
+- 前端数据与表单：TanStack Query、React Hook Form、Zod
 - 数据库：MySQL
 - 大模型：阿里云百炼 DashScope 兼容 OpenAI SDK 调用
 
@@ -38,6 +45,17 @@ frontend/
   messages.js      消息中心逻辑
   styles.css       前端样式
 
+frontend-v2/
+  src/
+    api/            FastAPI 请求与数据转换
+    components/     Design System、布局和业务组件
+    features/       认证、工作台等功能模块
+    pages/          React 页面
+    routes/         路由与角色守卫
+    styles/         TailwindCSS 与设计变量
+  package.json      Node.js 依赖与运行脚本
+  .env.example      新版前端 API 地址示例
+
 smart_medical_init.sql              完整初始化数据库脚本
 migrate_doctor_patient.sql          旧库补 patients.doctor_id
 create_message_tables.sql           旧库补消息中心表
@@ -48,6 +66,8 @@ update_users.sql                    旧库补演示账号
 ## 环境要求
 
 - Python 3.10+
+- Node.js 18+（推荐使用当前 LTS 版本）
+- npm 9+
 - MySQL 8.0 或兼容版本
 - Git
 - 现代浏览器：Chrome、Edge 等
@@ -174,7 +194,89 @@ http://127.0.0.1:8000/
 http://127.0.0.1:8000/docs
 ```
 
-## 6. 启动前端
+## 6. 启动新版前端（推荐）
+
+新版 React 前端不能直接双击 `index.html`，需要通过 Vite 启动。
+
+首次运行时进入新版前端目录并安装依赖：
+
+```bat
+cd frontend-v2
+npm install
+```
+
+如果 npm 提示 `esbuild` 安装脚本尚未批准，执行：
+
+```bat
+npm approve-scripts esbuild
+npm rebuild esbuild
+```
+
+启动开发服务：
+
+```bat
+npm run dev
+```
+
+浏览器访问：
+
+```text
+http://127.0.0.1:5175
+```
+
+日常使用时，只需要分别保持两个终端运行：
+
+```text
+Anaconda Prompt：backend 目录启动 FastAPI（8000）
+CMD / PyCharm Terminal：frontend-v2 目录运行 npm run dev（5175）
+```
+
+### 新版前端 API 配置
+
+`.env.example` 是配置模板，Vite 实际读取的是 `frontend-v2/.env`。
+
+本机开发通常不需要创建 `.env`，代码默认连接：
+
+```text
+http://127.0.0.1:8000
+```
+
+也可以复制模板：
+
+```bat
+cd frontend-v2
+copy .env.example .env
+```
+
+本机配置：
+
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+通过 Cloudflare Tunnel 公网访问时，将 `frontend-v2/.env` 改为后端 Tunnel 地址：
+
+```env
+VITE_API_BASE_URL=https://你的后端地址.trycloudflare.com
+```
+
+修改 `.env` 后需要停止并重新运行 `npm run dev`；生产构建则需要重新执行 `npm run build`。
+
+注意：`frontend-v2/.env` 只能存放可公开的前端配置，不能写入数据库密码、AI API Key 或账号密码。所有 `VITE_` 开头的变量都会进入浏览器代码。
+
+### 新版前端检查与构建
+
+```bat
+npm run typecheck
+npm run lint
+npm run build
+```
+
+构建结果输出到 `frontend-v2/dist/`，该目录不提交 Git。
+
+## 7. 启动旧版前端
+
+旧版前端仍可用于尚未迁移到 React 的功能。
 
 简单方式：
 
@@ -202,7 +304,7 @@ http://电脑IPv4地址:5500/frontend/
 
 手机和电脑需要连接同一个局域网。
 
-## 7. 默认账号
+## 8. 默认账号
 
 ```text
 管理员：admin / 228460
@@ -211,7 +313,7 @@ http://电脑IPv4地址:5500/frontend/
 
 管理员登录后可以新增医生、编辑医生、重置密码、禁用/启用医生账号。
 
-## 8. 常见问题
+## 9. 常见问题
 
 ### 1. 登录失败
 
@@ -245,7 +347,33 @@ http://电脑IPv4地址:5500/frontend/
 
 这是正常的。`.env` 包含数据库密码和 API Key，不应该上传。
 
-## 9. Git 日常提交
+### 5. 新版前端无法启动
+
+在 `frontend-v2` 目录依次检查：
+
+```bat
+npm install
+npm run typecheck
+npm run build
+```
+
+如果提示 `esbuild` 未批准，执行：
+
+```bat
+npm approve-scripts esbuild
+npm rebuild esbuild
+```
+
+### 6. 新版前端能打开但无法登录
+
+检查：
+
+- FastAPI 是否运行在 `http://127.0.0.1:8000`
+- `frontend-v2/.env` 是否配置了正确的后端地址
+- 修改 `.env` 后是否重新启动 Vite
+- 公网访问时填写的是后端 Tunnel，而不是前端 Tunnel
+
+## 10. Git 日常提交
 
 查看改动：
 
@@ -268,3 +396,5 @@ git add frontend/app.js frontend/styles.css
 git commit -m "优化前端样式"
 git push
 ```
+
+新版前端的 `node_modules/`、`dist/`、`.env` 和 `*.tsbuildinfo` 已由 `.gitignore` 排除；`package-lock.json`、`.env.example` 和 `src/` 应正常提交。
