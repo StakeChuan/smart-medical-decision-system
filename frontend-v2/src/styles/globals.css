@@ -97,6 +97,25 @@ button { cursor: pointer; }
   .analysis-status-error { @apply border-l-danger bg-danger/5 text-danger; }
   .analysis-steps { @apply mt-3 flex flex-wrap gap-2; }
   .analysis-steps span { @apply border border-primary/20 bg-surface px-2 py-1 text-[11px] text-primary; }
+  .report-header { @apply mb-5 border-b border-border pb-6; }
+  .report-header h1 { @apply text-2xl font-semibold; }
+  .report-header p { @apply mt-2 text-sm text-muted; }
+  .report-title-icon { @apply grid h-9 w-9 place-items-center rounded-sm bg-primary/10 text-primary; }
+  .report-actions { @apply mb-5 flex flex-col justify-between gap-4 border border-border bg-surface p-4 sm:flex-row sm:items-center; }
+  .report-actions > div:first-child strong { @apply text-sm; }
+  .report-actions > div:first-child p { @apply mt-1 text-xs text-muted; }
+  .report-meta { @apply mb-5 grid border border-border bg-surface sm:grid-cols-2 xl:grid-cols-4; }
+  .report-meta > div { @apply grid min-h-24 grid-cols-[20px_minmax(0,1fr)] content-center gap-x-3 border-b border-border p-4 sm:border-r xl:border-b-0; }
+  .report-meta svg { @apply row-span-2 text-muted; }
+  .report-meta span { @apply text-xs text-muted; }
+  .report-meta strong { @apply mt-1 break-words text-sm; }
+  .report-two-column { @apply grid items-start gap-5 xl:grid-cols-2; }
+  .full-report-collapse { @apply border border-border bg-surface; }
+  .full-report-collapse summary { @apply flex min-h-[70px] cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold; }
+  .full-report-collapse summary > span:first-child { @apply flex items-center gap-2; }
+  .full-report-collapse[open] summary svg:last-child { @apply rotate-180; }
+  .full-report-content { @apply border-t border-border p-5; }
+  .full-report-content pre { @apply whitespace-pre-wrap break-words font-sans text-sm leading-7; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }
@@ -108,6 +127,14 @@ button { cursor: pointer; }
 }
 
 @media print {
-  aside, header, button { display: none !important; }
+  @page { margin: 14mm; }
+  body { background: white !important; }
+  .print-hidden, button { display: none !important; }
+  .app-content { padding-left: 0 !important; }
   main { padding: 0 !important; }
+  .report-page { max-width: none !important; }
+  .report-header { display: block !important; }
+  .diagnosis-section, .report-meta, .full-report-collapse { break-inside: avoid; box-shadow: none !important; }
+  .full-report-collapse summary { display: none !important; }
+  .full-report-collapse > .full-report-content { display: block !important; border-top: 0; }
 }

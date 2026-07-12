@@ -6,6 +6,7 @@ import { DesignSystemPage } from "@/pages/design-system-page";
 import { DiagnosisWorkspacePage } from "@/pages/diagnosis-workspace-page";
 import { LoginPage } from "@/pages/login-page";
 import { PatientDetailPage } from "@/pages/patient-detail-page";
+import { ReportPage } from "@/pages/report-page";
 
 function DoctorGuard() { const { user } = useAuth(); if (!user) return <Navigate to="/login" replace />; if (user.role !== "doctor") return <Navigate to="/login" replace />; return <Outlet />; }
 
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
     { path: "/doctor/dashboard", element: <DashboardPage /> },
     { path: "/doctor/patients/:patientId", element: <PatientDetailPage /> },
     { path: "/doctor/patients/:patientId/consultations/:consultationId/diagnosis", element: <DiagnosisWorkspacePage /> },
+    { path: "/doctor/patients/:patientId/consultations/:consultationId/report", element: <ReportPage /> },
   ] }] },
   { path: "*", element: <Navigate to="/doctor/dashboard" replace /> },
 ]);
