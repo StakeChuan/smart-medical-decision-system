@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getPatient } from "@/api/patients";
+import { getPatient, getPatients } from "@/api/patients";
 import { isValidEntityId, queryKeys } from "@/lib/queryKeys";
 
 export function usePatient(patientId: number) {
@@ -8,5 +8,12 @@ export function usePatient(patientId: number) {
     queryKey: queryKeys.patients.detail(patientId),
     queryFn: () => getPatient(patientId),
     enabled,
+  });
+}
+
+export function usePatients() {
+  return useQuery({
+    queryKey: queryKeys.patients.all,
+    queryFn: getPatients,
   });
 }

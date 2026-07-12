@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
   { label: "工作台", icon: LayoutDashboard, to: "/doctor/dashboard", enabled: true },
-  { label: "患者", icon: Users, to: "/doctor/patients", enabled: false },
+  { label: "患者", icon: Users, to: "/doctor/patients", enabled: true },
   { label: "新建问诊", icon: ClipboardPlus, to: "/doctor/consultations/new", enabled: false },
   { label: "AI 诊断", icon: BrainCircuit, to: "/doctor/diagnosis", enabled: false },
   { label: "消息", icon: MessageSquare, to: "/doctor/messages", enabled: false },
