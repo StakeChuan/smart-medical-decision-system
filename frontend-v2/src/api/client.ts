@@ -1,3 +1,5 @@
+import type { ApiErrorCode, ApiErrorOptions } from "@/types/error";
+
 const SESSION_KEY = "smart-medical-v2-session";
 
 function resolveApiBase() {
@@ -9,9 +11,40 @@ function resolveApiBase() {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number) {
-    super(message);
+  readonly status: number;
+  readonly code: ApiErrorCode;
+  readonly details?: unknown;
+  override readonly cause?: unknown;
+
+  constructor(message: string, options: ApiErrorOptions = {}) {
+    super(message, { cause: options.cause });
+    this.name = "ApiError";
+    this.status = options.status ?? 0;
+    this.code = options.code ?? "UNKNOWN_ERROR";
+    this.details = options.details;
+    this.cause = options.cause;
   }
+}
+
+function codeForStatus(status: number): ApiErrorCode {
+  if (status === 401) return "UNAUTHORIZED";
+  if (status === 403) return "FORBIDDEN";
+  if (status === 404) return "NOT_FOUND";
+  if (status === 422) return "VALIDATION_ERROR";
+  if (status >= 500) return "SERVER_ERROR";
+  return "UNKNOWN_ERROR";
+}
+
+function formatValidationDetails(detail: unknown): string | null {
+  if (!Array.isArray(detail)) return null;
+  const messages = detail
+    .map((item) => {
+      if (typeof item !== "object" || item === null) return null;
+      const record = item as Record<string, unknown>;
+      return typeof record.msg === "string" ? record.msg : null;
+    })
+    .filter((item): item is string => Boolean(item));
+  return messages.length ? messages.join("；") : null;
 }
 
 function getToken() {
@@ -32,14 +65,28 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   let response: Response;
   try {
     response = await fetch(`${resolveApiBase()}${path}`, { ...init, headers });
-  } catch {
-    throw new ApiError("无法连接医疗服务，请确认后端已经启动。", 0);
+  } catch (error) {
+    throw new ApiError("无法连接医疗服务，请确认后端已经启动。", {
+      code: "NETWORK_ERROR",
+      cause: error,
+    });
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     const detail = body.detail;
-    const message = typeof detail === "string" ? detail : detail?.message || "请求失败，请稍后重试。";
-    throw new ApiError(message, response.status);
+    const objectMessage = typeof detail === "object" && detail !== null && "message" in detail
+      ? (detail as { message?: unknown }).message
+      : null;
+    const message = typeof detail === "string"
+      ? detail
+      : typeof objectMessage === "string"
+        ? objectMessage
+        : formatValidationDetails(detail) ?? "请求失败，请稍后重试。";
+    throw new ApiError(message, {
+      status: response.status,
+      code: codeForStatus(response.status),
+      details: detail,
+    });
   }
   return response.json() as Promise<T>;
 }
