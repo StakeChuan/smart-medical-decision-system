@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, CalendarDays, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, ClipboardPlus, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,6 @@ export function PatientListItem({ patient }: { patient: Patient }) {
     <div className="patient-list-cell"><span>患者编号</span><strong>#{patient.id}</strong></div>
     <div className="patient-list-cell"><span>过敏史</span>{patient.allergyHistory ? <Badge tone="danger"><AlertTriangle className="mr-1 h-3.5 w-3.5" />有记录</Badge> : <Badge tone="neutral">未记录</Badge>}</div>
     <div className="patient-list-cell"><span>创建时间</span><strong className="flex items-center gap-1.5 font-medium"><CalendarDays className="h-3.5 w-3.5 text-muted" />{formatCreatedAt(patient.createdAt)}</strong></div>
-    <Button asChild variant="ghost" size="icon" aria-label={`查看${patient.name || "患者"}详情`}><Link to={`/doctor/patients/${patient.id}`}><ArrowRight className="h-4 w-4" /></Link></Button>
+    <div className="patient-list-actions"><Button asChild variant="ghost" size="icon" aria-label={`为${patient.name || "患者"}新建问诊`}><Link to={`/doctor/consultations/new?patientId=${patient.id}`}><ClipboardPlus className="h-4 w-4" /></Link></Button><Button asChild variant="ghost" size="icon" aria-label={`查看${patient.name || "患者"}详情`}><Link to={`/doctor/patients/${patient.id}`}><ArrowRight className="h-4 w-4" /></Link></Button></div>
   </article>;
 }

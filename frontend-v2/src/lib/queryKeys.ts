@@ -5,6 +5,7 @@ export const queryKeys = {
     consultations: (patientId: number) => ["patients", patientId, "consultations"] as const,
   },
   consultations: {
+    create: ["consultations", "create"] as const,
     detail: (patientId: number, consultationId: number) =>
       ["patients", patientId, "consultations", consultationId] as const,
   },

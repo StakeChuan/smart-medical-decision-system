@@ -1,4 +1,4 @@
-import type { Consultation, PatientConsultationDto } from "@/types/consultation";
+import type { Consultation, ConsultationDto, PatientConsultationDto } from "@/types/consultation";
 import type { Patient, PatientDto } from "@/types/patient";
 import type { AiReport, AiReportDto, RiskLevel, StructuredReport, UrgencyLevel } from "@/types/report";
 
@@ -88,7 +88,7 @@ export function toAiReport(dto: AiReportDto): AiReport {
   };
 }
 
-export function toConsultation(dto: PatientConsultationDto): Consultation {
+export function toConsultation(dto: ConsultationDto | PatientConsultationDto): Consultation {
   return {
     id: dto.问诊ID,
     patientId: dto.患者ID,
@@ -99,6 +99,6 @@ export function toConsultation(dto: PatientConsultationDto): Consultation {
     pastHistory: dto.既往史,
     examination: dto.检查结果,
     createdAt: dto.创建时间,
-    aiReport: dto.AI报告 ? toAiReport(dto.AI报告) : null,
+    aiReport: "AI报告" in dto && dto.AI报告 ? toAiReport(dto.AI报告) : null,
   };
 }

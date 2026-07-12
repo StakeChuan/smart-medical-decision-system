@@ -5,6 +5,7 @@ import { DashboardPage } from "@/pages/dashboard-page";
 import { DesignSystemPage } from "@/pages/design-system-page";
 import { DiagnosisWorkspacePage } from "@/pages/diagnosis-workspace-page";
 import { LoginPage } from "@/pages/login-page";
+import { NewConsultationPage } from "@/features/consultations/new-consultation-page";
 import { PatientDetailPage } from "@/pages/patient-detail-page";
 import { PatientsPage } from "@/pages/patients-page";
 import { ReportPage } from "@/pages/report-page";
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
     { path: "/doctor/dashboard", element: <DashboardPage /> },
     { path: "/doctor/patients", element: <PatientsPage /> },
     { path: "/doctor/patients/:patientId", element: <PatientDetailPage /> },
+    { path: "/doctor/consultations/new", element: <NewConsultationPage /> },
     { path: "/doctor/patients/:patientId/consultations/:consultationId/diagnosis", element: <DiagnosisWorkspacePage /> },
     { path: "/doctor/patients/:patientId/consultations/:consultationId/report", element: <ReportPage /> },
   ] }] },

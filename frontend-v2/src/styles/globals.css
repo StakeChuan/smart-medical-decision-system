@@ -125,7 +125,7 @@ button { cursor: pointer; }
   .patient-search input { @apply h-full min-w-0 flex-1 border-0 px-0 shadow-none focus-visible:ring-0; }
   .patient-search button { @apply shrink-0; }
   .patient-list { @apply divide-y divide-border; }
-  .patient-list-item { @apply grid min-h-[88px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-4 transition-colors hover:bg-canvas sm:grid-cols-[minmax(180px,1.2fr)_90px_120px_auto_36px] sm:px-5 xl:grid-cols-[minmax(220px,1.3fr)_110px_140px_minmax(190px,0.8fr)_36px]; }
+  .patient-list-item { @apply grid min-h-[88px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-4 transition-colors hover:bg-canvas sm:grid-cols-[minmax(180px,1.2fr)_90px_120px_auto_76px] sm:px-5 xl:grid-cols-[minmax(220px,1.3fr)_110px_140px_minmax(190px,0.8fr)_76px]; }
   .patient-list-identity { @apply flex min-w-0 items-center gap-3; }
   .patient-name-link { @apply block truncate text-sm font-semibold outline-none hover:text-primary focus-visible:text-primary; }
   .patient-list-identity p { @apply mt-1 text-xs text-muted; }
@@ -133,10 +133,42 @@ button { cursor: pointer; }
   .patient-list-cell { @apply hidden min-w-0 sm:block; }
   .patient-list-cell > span { @apply mb-1.5 block text-[11px] text-muted; }
   .patient-list-cell > strong { @apply block truncate text-xs; }
+  .patient-list-actions { @apply flex items-center justify-end; }
   .patient-list-skeleton { @apply flex min-h-[88px] items-center gap-4 border-b border-border px-5 py-4 last:border-b-0; }
   .permission-state, .search-empty { @apply flex min-h-64 flex-col items-center justify-center px-6 text-center; }
   .permission-state p, .search-empty p { @apply mt-2 max-w-md text-sm leading-6 text-muted; }
   .search-empty button { @apply mt-4; }
+  .consultation-panel { @apply mb-5 overflow-hidden border border-border bg-surface; }
+  .consultation-panel-heading { @apply flex flex-col justify-between gap-4 border-b border-border px-5 py-4 md:flex-row md:items-center; }
+  .consultation-panel-heading > div > span { @apply text-[11px] font-semibold text-primary; }
+  .consultation-panel-heading h2 { @apply mt-1 text-base font-semibold; }
+  .consultation-panel-heading p { @apply mt-1 text-xs text-muted; }
+  .patient-choice-list { @apply divide-y divide-border; }
+  .patient-choice { @apply flex min-h-[72px] w-full items-center gap-3 bg-surface px-5 py-3 text-left outline-none transition-colors hover:bg-canvas focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30; }
+  .patient-choice[data-selected="true"] { @apply bg-primary/5; }
+  .patient-choice strong { @apply block truncate text-sm; }
+  .patient-choice p { @apply mt-1 text-xs text-muted; }
+  .patient-choice-action { @apply shrink-0 px-2 text-xs font-semibold text-muted; }
+  .selected-patient-context { @apply mb-5 flex flex-wrap items-center gap-4 border-l-[3px] border-l-primary bg-surface p-5; }
+  .selected-patient-context > div:nth-child(2) > span { @apply text-[11px] font-semibold text-primary; }
+  .selected-patient-context h2 { @apply mt-1 text-base font-semibold; }
+  .selected-patient-context p { @apply mt-1 text-xs text-muted; }
+  .consultation-fields { @apply divide-y divide-border; }
+  .consultation-field { @apply grid gap-4 px-5 py-5 md:grid-cols-[minmax(180px,0.55fr)_minmax(0,1.45fr)]; }
+  .consultation-field > div:first-child > span { @apply text-sm font-semibold; }
+  .consultation-field > div:first-child b { @apply font-normal text-danger; }
+  .consultation-field > div:first-child p { @apply mt-1 text-xs leading-5 text-muted; }
+  .consultation-field textarea { @apply block min-h-24 w-full resize-y rounded-sm border border-border bg-surface px-3 py-2.5 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15; }
+  .consultation-field textarea[aria-invalid="true"] { @apply border-danger focus:border-danger focus:ring-danger/15; }
+  .field-error { @apply mt-1.5 block text-xs text-danger; }
+  .consultation-submit-bar { @apply flex flex-col justify-between gap-4 border border-border bg-surface p-4 sm:flex-row sm:items-center; }
+  .consultation-submit-bar > div { @apply flex items-start gap-3; }
+  .consultation-submit-bar p strong { @apply block text-sm; }
+  .consultation-submit-bar p span { @apply mt-1 block text-xs text-muted; }
+  .consultation-error { @apply mb-4 border-l-2 border-danger bg-danger/5 px-4 py-3 text-sm text-danger; }
+  .consultation-selection-notice { @apply flex min-h-36 items-center justify-center gap-3 border border-dashed border-border bg-surface px-6 text-center; }
+  .consultation-selection-notice strong { @apply text-sm; }
+  .consultation-selection-notice p { @apply mt-1 text-xs text-muted; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }
