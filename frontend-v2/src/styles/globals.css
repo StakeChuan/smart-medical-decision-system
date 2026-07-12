@@ -63,6 +63,40 @@ button { cursor: pointer; }
   .consultation-heading { @apply flex flex-col justify-between gap-3 sm:flex-row sm:items-start; }
   .consultation-summary { @apply mt-4 grid gap-4 border-t border-border pt-4 md:grid-cols-3; }
   .clinical-value { @apply mt-1 break-words text-sm leading-6; }
+  .diagnosis-page-header { @apply mb-5 flex flex-col justify-between gap-5 border-b border-border pb-5 sm:flex-row sm:items-end; }
+  .diagnosis-page-header h1 { @apply text-2xl font-semibold; }
+  .diagnosis-page-header p { @apply mt-2 text-sm text-muted; }
+  .diagnosis-layout { @apply grid items-start gap-5 xl:grid-cols-[320px_minmax(0,1fr)]; }
+  .diagnosis-context { @apply xl:sticky xl:top-[92px]; }
+  .context-value { @apply py-4; }
+  .context-value span { @apply text-xs text-muted; }
+  .context-value p { @apply mt-1 break-words text-sm leading-6; }
+  .context-notice { @apply mt-1 flex gap-3 border-l-2 border-primary bg-primary/5 p-3 text-xs leading-5 text-muted; }
+  .diagnosis-section { @apply overflow-hidden border border-border bg-surface; }
+  .diagnosis-section-heading { @apply flex min-h-[76px] items-center justify-between gap-4 border-b border-border px-5 py-4; }
+  .diagnosis-section-heading span { @apply text-[11px] font-semibold uppercase text-muted; }
+  .diagnosis-section-heading h2 { @apply mt-1 text-base font-semibold; }
+  .diagnosis-section-heading > strong { @apply text-xs text-muted; }
+  .consultation-detail-grid { @apply grid gap-px bg-border md:grid-cols-2 xl:grid-cols-3; }
+  .consultation-detail-grid > div { @apply min-h-28 bg-surface p-5; }
+  .consultation-detail-grid span, .ai-summary-grid span { @apply text-xs text-muted; }
+  .consultation-detail-grid p, .ai-summary-grid p { @apply mt-2 whitespace-pre-wrap break-words text-sm leading-7; }
+  .ai-summary-grid { @apply grid gap-px bg-border md:grid-cols-2; }
+  .ai-summary-grid > div { @apply min-h-32 bg-surface p-5; }
+  .diagnosis-two-column { @apply grid items-stretch gap-5 2xl:grid-cols-2; }
+  .risk-section { @apply border-t-2 border-t-danger/50; }
+  .medical-empty { @apply flex flex-col items-start justify-center gap-2 p-5 text-sm; }
+  .medical-empty p { @apply max-w-2xl leading-6 text-muted; }
+  .analysis-status { @apply flex items-start gap-3 border-l-[3px] bg-surface px-5 py-4; }
+  .analysis-status strong { @apply text-sm; }
+  .analysis-status p { @apply mt-1 text-xs leading-5 text-muted; }
+  .analysis-status-idle { @apply border-l-primary; }
+  .analysis-status-analyzing { @apply border-l-primary bg-primary/5 text-primary; }
+  .analysis-status-success { @apply border-l-success text-success; }
+  .analysis-status-partial { @apply border-l-warning text-warning; }
+  .analysis-status-error { @apply border-l-danger bg-danger/5 text-danger; }
+  .analysis-steps { @apply mt-3 flex flex-wrap gap-2; }
+  .analysis-steps span { @apply border border-primary/20 bg-surface px-2 py-1 text-[11px] text-primary; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }

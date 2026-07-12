@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/features/auth/auth-context";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { DesignSystemPage } from "@/pages/design-system-page";
+import { DiagnosisWorkspacePage } from "@/pages/diagnosis-workspace-page";
 import { LoginPage } from "@/pages/login-page";
 import { PatientDetailPage } from "@/pages/patient-detail-page";
 
@@ -14,6 +15,7 @@ export const router = createBrowserRouter([
   { element: <DoctorGuard />, children: [{ element: <AppShell />, children: [
     { path: "/doctor/dashboard", element: <DashboardPage /> },
     { path: "/doctor/patients/:patientId", element: <PatientDetailPage /> },
+    { path: "/doctor/patients/:patientId/consultations/:consultationId/diagnosis", element: <DiagnosisWorkspacePage /> },
   ] }] },
   { path: "*", element: <Navigate to="/doctor/dashboard" replace /> },
 ]);

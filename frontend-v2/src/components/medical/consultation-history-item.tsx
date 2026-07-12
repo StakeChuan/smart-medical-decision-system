@@ -10,9 +10,7 @@ function ClinicalValue({ label, value }: { label: string; value: string | null }
 }
 
 export function ConsultationHistoryItem({ consultation }: { consultation: Consultation }) {
-  const destination = consultation.aiReport
-    ? `/doctor/patients/${consultation.patientId}/consultations/${consultation.id}/report`
-    : `/doctor/patients/${consultation.patientId}/consultations/${consultation.id}/diagnosis`;
+  const destination = `/doctor/patients/${consultation.patientId}/consultations/${consultation.id}/diagnosis`;
   return <article className="consultation-item">
     <div className="timeline-marker"><Stethoscope className="h-4 w-4" /></div>
     <div className="min-w-0 flex-1">
