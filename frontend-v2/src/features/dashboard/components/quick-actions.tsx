@@ -5,7 +5,7 @@ const actions = [
   { label: "新增患者", description: "建立患者基础档案", icon: UserPlus, to: "/doctor/patients/new", enabled: true },
   { label: "新建问诊", description: "选择患者并录入问诊", icon: ClipboardPlus, to: "/doctor/consultations/new", enabled: true },
   { label: "患者列表", description: "查找患者与历史记录", icon: Users, to: "/doctor/patients", enabled: true },
-  { label: "AI 诊断中心", description: "独立入口将在后续开放", icon: BrainCircuit, to: "", enabled: false },
+  { label: "AI 辅助决策中心", description: "审核近期辅助分析与报告", icon: BrainCircuit, to: "/doctor/ai-center", enabled: true },
 ];
 
 export function QuickActions() {

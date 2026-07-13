@@ -10,7 +10,7 @@ const navigation = [
   { label: "患者", icon: Users, to: "/doctor/patients", enabled: true },
   { label: "新增患者", icon: UserPlus, to: "/doctor/patients/new", enabled: true },
   { label: "新建问诊", icon: ClipboardPlus, to: "/doctor/consultations/new", enabled: true },
-  { label: "AI 诊断", icon: BrainCircuit, to: "/doctor/diagnosis", enabled: false },
+  { label: "AI 辅助决策", icon: BrainCircuit, to: "/doctor/ai-center", enabled: true },
   { label: "消息", icon: MessageSquare, to: "/doctor/messages", enabled: false },
 ];
 

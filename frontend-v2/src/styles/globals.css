@@ -231,6 +231,28 @@ button { cursor: pointer; }
   .patient-submit-bar > div { @apply flex items-start gap-3; }
   .patient-submit-bar p strong { @apply block text-sm; }
   .patient-submit-bar p span { @apply mt-1 block text-xs text-muted; }
+  .ai-center-notice { @apply mb-5 flex items-start gap-3 border-l-[3px] border-l-primary bg-surface p-4; }
+  .ai-center-notice > svg { @apply mt-0.5 shrink-0 text-primary; }
+  .ai-center-notice strong { @apply text-sm; }
+  .ai-center-notice p { @apply mt-1 text-xs leading-5 text-muted; }
+  .ai-center-summary { @apply grid grid-cols-3 border border-border bg-surface; }
+  .ai-center-summary > div { @apply min-h-28 border-r border-border p-4 last:border-r-0; }
+  .ai-center-summary > div > div { @apply flex items-start justify-between gap-2 text-sm text-muted; }
+  .ai-center-summary > div > div svg { @apply shrink-0 text-primary; }
+  .ai-center-summary > div > strong { @apply mt-3 block text-2xl; }
+  .ai-center-summary > div > p { @apply mt-2 text-xs text-muted; }
+  .ai-center-layout { @apply mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(350px,0.75fr)]; }
+  .ai-center-record { @apply grid min-h-[104px] grid-cols-[40px_minmax(0,1fr)] items-center gap-3 px-4 py-4 sm:px-5 md:grid-cols-[40px_minmax(0,1fr)_auto]; }
+  .ai-center-record p { @apply mt-2 line-clamp-2 text-sm leading-6 text-muted; }
+  .ai-center-record > div:nth-child(2) > span { @apply mt-1 block text-xs text-muted; }
+  .ai-center-record > a { @apply col-start-2 mt-1 justify-self-start md:col-start-auto md:mt-0; }
+  .ai-center-compact-row { @apply flex min-h-[72px] items-center gap-3 px-4 py-3 sm:px-5; }
+  .ai-center-compact-row strong { @apply text-sm; }
+  .ai-center-compact-row p { @apply mt-1 text-xs text-muted; }
+  .ai-center-empty { @apply mt-5 flex min-h-72 flex-col items-center justify-center border border-border bg-surface px-6 py-10 text-center; }
+  .ai-center-empty strong { @apply mt-3; }
+  .ai-center-empty p { @apply mt-2 max-w-md text-sm leading-6 text-muted; }
+  .ai-center-empty > div { @apply mt-5 flex flex-wrap justify-center gap-2; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }

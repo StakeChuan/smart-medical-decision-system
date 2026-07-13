@@ -1,5 +1,6 @@
 import { Navigate, Outlet, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "@/components/layout/app-shell";
+import { AiCenterPage } from "@/features/ai-center/ai-center-page";
 import { useAuth } from "@/features/auth/auth-context";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { DesignSystemPage } from "@/pages/design-system-page";
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
   { path: "/design-system", element: <DesignSystemPage /> },
   { element: <DoctorGuard />, children: [{ element: <AppShell />, children: [
     { path: "/doctor/dashboard", element: <DashboardPage /> },
+    { path: "/doctor/ai-center", element: <AiCenterPage /> },
     { path: "/doctor/patients", element: <PatientsPage /> },
     { path: "/doctor/patients/new", element: <NewPatientPage /> },
     { path: "/doctor/patients/:patientId", element: <PatientDetailPage /> },
