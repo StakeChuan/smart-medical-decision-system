@@ -1,4 +1,7 @@
 export const queryKeys = {
+  admin: {
+    dashboard: ["admin", "dashboard"] as const,
+  },
   dashboard: {
     doctor: ["dashboard", "doctor"] as const,
   },

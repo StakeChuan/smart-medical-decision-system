@@ -291,6 +291,28 @@ button { cursor: pointer; }
   .message-empty > svg { @apply mb-3 text-muted; }
   .message-empty p { @apply mt-2 max-w-md text-sm leading-6 text-muted; }
   .message-empty > div { @apply mt-5 flex flex-wrap justify-center gap-2; }
+  .admin-header-role { @apply flex items-center gap-2 text-xs font-semibold text-primary; }
+  .admin-summary { @apply grid grid-cols-2 border border-border bg-surface md:grid-cols-5; }
+  .admin-summary > div { @apply min-h-24 border-b border-r border-border p-4 md:border-b-0; }
+  .admin-summary > div:nth-child(2n) { @apply border-r-0 md:border-r; }
+  .admin-summary > div:last-child { @apply col-span-2 border-b-0 border-r-0 md:col-span-1; }
+  .admin-summary > div > div { @apply flex items-center justify-between gap-2 text-xs text-muted; }
+  .admin-summary > div > div svg { @apply shrink-0 text-primary; }
+  .admin-summary > div > strong { @apply mt-3 block text-2xl; }
+  .admin-dashboard-grid { @apply mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(350px,0.75fr)]; }
+  .admin-trend-chart { @apply h-[280px] px-3 pb-4 pt-3 sm:px-5; }
+  .admin-doctor-row { @apply grid min-h-[88px] grid-cols-[32px_minmax(0,1fr)] items-center gap-3 px-4 py-4 sm:px-5 md:grid-cols-[32px_minmax(150px,1fr)_auto_130px]; }
+  .admin-rank { @apply grid h-7 w-7 place-items-center rounded-sm bg-canvas text-xs font-semibold text-muted; }
+  .admin-doctor-row p { @apply mt-1 text-xs text-muted; }
+  .admin-doctor-stats { @apply col-start-2 flex flex-wrap gap-3 text-xs text-muted md:col-start-auto; }
+  .admin-doctor-stats strong { @apply text-foreground; }
+  .admin-row-time { @apply col-start-2 text-left md:col-start-auto md:text-right; }
+  .admin-row-time > span { @apply block text-[10px] text-muted; }
+  .admin-row-time > strong { @apply mt-1 block text-xs font-medium; }
+  .admin-row-time > small { @apply mt-1 block text-[10px] text-muted; }
+  .admin-patient-row { @apply grid min-h-[76px] grid-cols-[36px_minmax(0,1fr)] items-center gap-3 px-4 py-3 sm:grid-cols-[36px_minmax(0,1fr)_130px] sm:px-5; }
+  .admin-patient-row > div:nth-child(2) strong { @apply block truncate text-sm; }
+  .admin-patient-row > div:nth-child(2) p { @apply mt-1 truncate text-xs text-muted; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }

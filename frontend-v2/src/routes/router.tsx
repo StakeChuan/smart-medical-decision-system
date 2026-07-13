@@ -1,7 +1,10 @@
 import { Navigate, Outlet, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "@/components/layout/app-shell";
+import { AdminAppShell } from "@/components/layout/admin-app-shell";
+import { AdminDashboardPage } from "@/features/admin/admin-dashboard-page";
 import { AiCenterPage } from "@/features/ai-center/ai-center-page";
 import { useAuth } from "@/features/auth/auth-context";
+import { RoleForbiddenPage } from "@/features/auth/role-forbidden-page";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { DesignSystemPage } from "@/pages/design-system-page";
 import { DiagnosisWorkspacePage } from "@/pages/diagnosis-workspace-page";
@@ -13,11 +16,16 @@ import { PatientDetailPage } from "@/pages/patient-detail-page";
 import { PatientsPage } from "@/pages/patients-page";
 import { ReportPage } from "@/pages/report-page";
 
-function DoctorGuard() { const { user } = useAuth(); if (!user) return <Navigate to="/login" replace />; if (user.role !== "doctor") return <Navigate to="/login" replace />; return <Outlet />; }
+function DoctorGuard() { const { user } = useAuth(); if (!user) return <Navigate to="/login" replace />; if (user.role !== "doctor") return <Navigate to="/admin/dashboard" replace />; return <Outlet />; }
+function AdminGuard() { const { user } = useAuth(); if (!user) return <Navigate to="/login" replace />; if (user.role !== "admin") return <RoleForbiddenPage area="admin" />; return <Outlet />; }
+function RoleHome() { const { user } = useAuth(); if (!user) return <Navigate to="/login" replace />; return <Navigate to={user.role === "admin" ? "/admin/dashboard" : "/doctor/dashboard"} replace />; }
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/design-system", element: <DesignSystemPage /> },
+  { element: <AdminGuard />, children: [{ element: <AdminAppShell />, children: [
+    { path: "/admin/dashboard", element: <AdminDashboardPage /> },
+  ] }] },
   { element: <DoctorGuard />, children: [{ element: <AppShell />, children: [
     { path: "/doctor/dashboard", element: <DashboardPage /> },
     { path: "/doctor/ai-center", element: <AiCenterPage /> },
@@ -29,5 +37,5 @@ export const router = createBrowserRouter([
     { path: "/doctor/patients/:patientId/consultations/:consultationId/diagnosis", element: <DiagnosisWorkspacePage /> },
     { path: "/doctor/patients/:patientId/consultations/:consultationId/report", element: <ReportPage /> },
   ] }] },
-  { path: "*", element: <Navigate to="/doctor/dashboard" replace /> },
+  { path: "*", element: <RoleHome /> },
 ]);
