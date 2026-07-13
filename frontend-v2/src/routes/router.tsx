@@ -2,6 +2,10 @@ import { Navigate, Outlet, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "@/components/layout/app-shell";
 import { AdminAppShell } from "@/components/layout/admin-app-shell";
 import { AdminDashboardPage } from "@/features/admin/admin-dashboard-page";
+import { AdminDoctorDetailPage } from "@/features/admin/doctors/admin-doctor-detail-page";
+import { AdminDoctorListPage } from "@/features/admin/doctors/admin-doctor-list-page";
+import { AdminPatientDetailPage } from "@/features/admin/patients/admin-patient-detail-page";
+import { AdminPatientListPage } from "@/features/admin/patients/admin-patient-list-page";
 import { AiCenterPage } from "@/features/ai-center/ai-center-page";
 import { useAuth } from "@/features/auth/auth-context";
 import { RoleForbiddenPage } from "@/features/auth/role-forbidden-page";
@@ -25,6 +29,10 @@ export const router = createBrowserRouter([
   { path: "/design-system", element: <DesignSystemPage /> },
   { element: <AdminGuard />, children: [{ element: <AdminAppShell />, children: [
     { path: "/admin/dashboard", element: <AdminDashboardPage /> },
+    { path: "/admin/doctors", element: <AdminDoctorListPage /> },
+    { path: "/admin/doctors/:doctorId", element: <AdminDoctorDetailPage /> },
+    { path: "/admin/patients", element: <AdminPatientListPage /> },
+    { path: "/admin/patients/:patientId", element: <AdminPatientDetailPage /> },
   ] }] },
   { element: <DoctorGuard />, children: [{ element: <AppShell />, children: [
     { path: "/doctor/dashboard", element: <DashboardPage /> },

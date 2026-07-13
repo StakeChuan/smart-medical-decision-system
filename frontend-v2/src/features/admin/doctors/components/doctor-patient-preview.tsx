@@ -1,0 +1,9 @@
+import { AlertCircle, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmptyState, Skeleton } from "@/components/ui/states";
+import { formatDateTime } from "@/lib/utils";
+import type { DoctorPatient } from "../types";
+
+export function DoctorPatientPreview({ patients, isLoading, error, onRetry }: { patients?: DoctorPatient[]; isLoading: boolean; error: Error | null; onRetry: () => void }) {
+  return <section className="workspace-section"><div className="section-heading"><div><h2>关联患者概览</h2><p>按接口顺序展示前 5 条，完整患者管理将在后续开放</p></div><span className="text-xs font-semibold text-muted">/admin/patients 即将开放</span></div>{isLoading && <div aria-label="正在加载医生关联患者">{[1,2,3].map((item) => <div className="border-b border-border p-4 last:border-b-0" key={item}><Skeleton className="h-14" /></div>)}</div>}{error && <div className="admin-related-error"><AlertCircle className="h-5 w-5 text-danger" /><div><strong>关联患者加载失败</strong><p>{error.message}</p></div><Button variant="secondary" size="sm" onClick={onRetry}>重新加载</Button></div>}{patients && patients.length > 0 && <div className="divide-y divide-border">{patients.slice(0,5).map((patient) => <article className="admin-related-patient" key={patient.id}><div className="avatar">{patient.name.slice(0,1)}</div><div className="min-w-0"><strong>{patient.name}</strong><p>患者 #{patient.id} · {patient.gender || "性别未提供"} · {patient.age == null ? "年龄未提供" : `${patient.age} 岁`}</p></div><div><span>问诊 {patient.consultationCount} 次</span><strong>{formatDateTime(patient.lastConsultationTime)}</strong></div></article>)}</div>}{patients && patients.length === 0 && <EmptyState title="暂无关联患者" description="该医生当前没有关联患者记录。" />}{!isLoading && !error && !patients && <div className="medical-empty"><Users className="h-5 w-5 text-muted" /><p>暂无患者数据。</p></div>}</section>;
+}

@@ -313,9 +313,100 @@ button { cursor: pointer; }
   .admin-patient-row { @apply grid min-h-[76px] grid-cols-[36px_minmax(0,1fr)] items-center gap-3 px-4 py-3 sm:grid-cols-[36px_minmax(0,1fr)_130px] sm:px-5; }
   .admin-patient-row > div:nth-child(2) strong { @apply block truncate text-sm; }
   .admin-patient-row > div:nth-child(2) p { @apply mt-1 truncate text-xs text-muted; }
+  .admin-doctor-toolbar { @apply flex flex-col justify-between gap-4 border-b border-border px-4 py-4 sm:px-5 md:flex-row md:items-center; }
+  .admin-doctor-toolbar h2 { @apply text-base font-semibold; }
+  .admin-doctor-toolbar p { @apply mt-1 text-xs text-muted; }
+  .admin-doctor-search { @apply flex h-10 w-full items-center gap-2 border border-border bg-surface pl-3 focus-within:ring-2 focus-within:ring-primary/20 md:w-[320px]; }
+  .admin-doctor-search > svg { @apply shrink-0 text-muted; }
+  .admin-doctor-search input { @apply h-full min-w-0 flex-1 border-0 px-0 shadow-none focus:ring-0; }
+  .admin-doctor-search button { @apply shrink-0; }
+  .admin-doctor-table-header { @apply hidden min-h-11 grid-cols-[minmax(180px,1.3fr)_90px_56px_56px_56px_130px_36px] items-center gap-3 border-b border-border bg-canvas/60 px-5 text-[11px] font-semibold text-muted md:grid; }
+  .admin-doctor-list-row { @apply grid min-h-[96px] grid-cols-[repeat(3,minmax(0,1fr))_36px] items-center gap-x-3 gap-y-3 px-4 py-4 sm:px-5 md:grid-cols-[minmax(180px,1.3fr)_90px_56px_56px_56px_130px_36px] md:gap-y-0; }
+  .admin-doctor-identity { @apply col-span-3 flex min-w-0 items-center gap-3 md:col-span-1; }
+  .admin-doctor-identity a { @apply block truncate text-sm font-semibold outline-none hover:text-primary focus-visible:text-primary; }
+  .admin-doctor-identity p { @apply mt-1 truncate text-xs text-muted; }
+  .admin-doctor-list-status { @apply col-span-4 flex items-center gap-2 md:col-span-1 md:flex; }
+  .admin-doctor-list-status > span:first-child, .admin-doctor-number > span, .admin-doctor-last > span { @apply text-[10px] text-muted md:hidden; }
+  .admin-doctor-number { @apply flex flex-col gap-1 text-xs md:block; }
+  .admin-doctor-number strong { @apply text-sm; }
+  .admin-doctor-last { @apply col-span-4 flex items-center justify-between gap-3 text-xs md:col-span-1 md:block; }
+  .admin-doctor-last strong { @apply font-medium; }
+  .admin-doctor-list-row > a { @apply col-start-4 row-start-1 md:col-start-auto md:row-start-auto; }
+  .admin-doctor-detail-fields { @apply grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4; }
+  .admin-doctor-detail-fields > div { @apply min-h-24 bg-surface p-5; }
+  .admin-doctor-detail-fields span { @apply text-xs text-muted; }
+  .admin-doctor-detail-fields strong { @apply mt-2 block break-words text-sm; }
+  .admin-doctor-detail-stats { @apply grid grid-cols-2 border border-border bg-surface lg:grid-cols-4; }
+  .admin-doctor-detail-stats > div { @apply min-h-24 border-b border-r border-border p-4 lg:border-b-0; }
+  .admin-doctor-detail-stats > div:nth-child(2n) { @apply border-r-0 lg:border-r; }
+  .admin-doctor-detail-stats > div:last-child { @apply border-r-0; }
+  .admin-doctor-detail-stats > div > div { @apply flex items-center justify-between gap-2 text-xs text-muted; }
+  .admin-doctor-detail-stats svg { @apply text-primary; }
+  .admin-doctor-detail-stats strong { @apply mt-3 block text-xl; }
+  .admin-related-patient { @apply grid min-h-[76px] grid-cols-[36px_minmax(0,1fr)] items-center gap-3 px-4 py-3 sm:grid-cols-[36px_minmax(0,1fr)_140px] sm:px-5; }
+  .admin-related-patient > div:nth-child(2) strong { @apply block truncate text-sm; }
+  .admin-related-patient > div:nth-child(2) p { @apply mt-1 truncate text-xs text-muted; }
+  .admin-related-patient > div:last-child { @apply col-start-2 text-left sm:col-start-auto sm:text-right; }
+  .admin-related-patient > div:last-child span { @apply block text-[10px] text-muted; }
+  .admin-related-patient > div:last-child strong { @apply mt-1 block text-xs font-medium; }
+  .admin-related-error { @apply flex min-h-36 flex-col items-start gap-3 p-5 sm:flex-row sm:items-center; }
+  .admin-related-error > div { @apply min-w-0 flex-1; }
+  .admin-related-error p { @apply mt-1 text-xs text-muted; }
+  .admin-doctor-not-found { @apply flex min-h-72 flex-col items-center justify-center border border-border bg-surface px-6 text-center; }
+  .admin-doctor-not-found strong { @apply mt-3; }
+  .admin-doctor-not-found p { @apply mt-2 text-sm text-muted; }
+  .admin-doctor-not-found a { @apply mt-5; }
+  .admin-patient-toolbar { @apply flex flex-col justify-between gap-4 border-b border-border px-4 py-4 sm:px-5 md:flex-row md:items-end; }
+  .admin-patient-toolbar h2 { @apply text-base font-semibold; }
+  .admin-patient-toolbar p { @apply mt-1 text-xs text-muted; }
+  .admin-patient-doctor-filter { @apply block w-full md:w-[300px]; }
+  .admin-patient-doctor-filter > span { @apply mb-1.5 block text-[11px] font-semibold text-muted; }
+  .admin-patient-doctor-filter select { @apply h-10 w-full rounded-sm border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:bg-canvas; }
+  .admin-patient-search-panel { @apply border-b border-border bg-canvas/40 px-4 py-4 sm:px-5; }
+  .admin-patient-search-panel form { @apply flex items-center gap-2; }
+  .admin-patient-search-panel form > svg { @apply shrink-0; }
+  .admin-patient-search-panel input { @apply h-10 min-w-0 flex-1; }
+  .admin-patient-search-panel p { @apply mt-2 text-[11px] leading-5 text-muted; }
+  .admin-patient-partial-note { @apply border-b border-warning/20 bg-warning/5 px-5 py-3 text-xs text-muted; }
+  .admin-patient-table-header { @apply hidden min-h-11 grid-cols-[minmax(180px,1.2fr)_150px_130px_105px_85px_105px_36px] items-center gap-3 border-b border-border bg-canvas/60 px-5 text-[11px] font-semibold text-muted lg:grid; }
+  .admin-patient-list-row { @apply relative grid min-h-[112px] grid-cols-2 items-center gap-x-3 gap-y-3 px-4 py-4 sm:px-5 lg:static lg:min-h-[92px] lg:grid-cols-[minmax(180px,1.2fr)_150px_130px_105px_85px_105px_36px] lg:gap-y-0; }
+  .admin-patient-identity { @apply col-span-2 flex min-w-0 items-center gap-3 lg:col-span-1; }
+  .admin-patient-identity a { @apply block truncate text-sm font-semibold outline-none hover:text-primary focus-visible:text-primary; }
+  .admin-patient-identity p { @apply mt-1 text-xs text-muted; }
+  .admin-patient-demographics, .admin-patient-owner, .admin-patient-date, .admin-patient-unavailable { @apply min-w-0 text-xs; }
+  .admin-patient-demographics span, .admin-patient-owner span, .admin-patient-date span, .admin-patient-unavailable span { @apply mb-1 block text-[10px] text-muted lg:hidden; }
+  .admin-patient-demographics strong, .admin-patient-owner strong, .admin-patient-date strong, .admin-patient-unavailable strong { @apply block truncate font-medium; }
+  .admin-patient-unavailable strong { @apply text-muted; }
+  .admin-patient-list-row > a { @apply absolute right-4 top-4 lg:static; }
+  .admin-patient-detail-fields { @apply grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4; }
+  .admin-patient-detail-fields > div { @apply min-h-24 bg-surface p-5; }
+  .admin-patient-detail-fields span, .admin-patient-medical-fields span { @apply text-xs text-muted; }
+  .admin-patient-detail-fields strong { @apply mt-2 block break-words text-sm; }
+  .admin-patient-clinical-metrics { @apply grid grid-cols-1 gap-px bg-border sm:grid-cols-3; }
+  .admin-patient-clinical-metrics > div { @apply grid min-h-24 grid-cols-[1fr_auto] bg-surface p-4; }
+  .admin-patient-clinical-metrics span { @apply text-xs text-muted; }
+  .admin-patient-clinical-metrics strong { @apply col-span-2 mt-2 text-xl; }
+  .admin-patient-consultation-row { @apply flex min-h-20 flex-col justify-between gap-3 px-4 py-3 sm:flex-row sm:items-center sm:px-5; }
+  .admin-patient-consultation-row p { @apply mt-1 text-xs text-muted; }
+  .admin-patient-consultation-row > div:last-child { @apply flex items-center justify-between gap-3 sm:flex-col sm:items-end; }
+  .admin-patient-consultation-row > div:last-child > span:last-child { @apply text-xs text-muted; }
+  .admin-patient-medical-fields { @apply grid gap-px bg-border md:grid-cols-2; }
+  .admin-patient-medical-fields > div { @apply min-h-28 bg-surface p-5; }
+  .admin-patient-medical-fields p { @apply mt-2 whitespace-pre-wrap text-sm leading-6; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }
+}
+
+@media (min-width: 768px) {
+  .admin-doctor-list-row > :nth-child(1) { grid-column: 1; }
+  .admin-doctor-list-row > :nth-child(2) { grid-column: 2; display: flex; align-items: center; visibility: visible; }
+  .admin-doctor-list-status { display: flex; align-items: center; }
+  .admin-doctor-list-row > :nth-child(3) { grid-column: 3; }
+  .admin-doctor-list-row > :nth-child(4) { grid-column: 4; }
+  .admin-doctor-list-row > :nth-child(5) { grid-column: 5; }
+  .admin-doctor-list-row > :nth-child(6) { grid-column: 6; }
+  .admin-doctor-list-row > :nth-child(7) { grid-column: 7; }
 }
 
 @media (max-width: 639px) {
