@@ -1,24 +1,31 @@
-import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BrainCircuit, CalendarDays, ClipboardList, FileText, Plus, RefreshCw, Stethoscope, Users } from "lucide-react";
-import { Link } from "react-router-dom";
-import { getDoctorDashboard } from "@/api/dashboard";
-import { Badge } from "@/components/ui/badge";
+import { RefreshCw, ShieldAlert } from "lucide-react";
+import { ApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
-import { EmptyState, ErrorState, Skeleton } from "@/components/ui/states";
-import { Metric } from "@/components/ui/metric";
+import { PageHeader } from "@/components/ui/page-header";
+import { ErrorState, Skeleton } from "@/components/ui/states";
+import { DashboardSummary } from "@/features/dashboard/components/dashboard-summary";
+import { PendingConsultationSection } from "@/features/dashboard/components/pending-consultation-section";
+import { QuickActions } from "@/features/dashboard/components/quick-actions";
+import { RecentConsultationSection } from "@/features/dashboard/components/recent-consultation-section";
+import { RecentPatientSection } from "@/features/dashboard/components/recent-patient-section";
+import { RecentReportSection } from "@/features/dashboard/components/recent-report-section";
+import { useDoctorDashboard } from "@/features/dashboard/queries";
 import { useAuth } from "@/features/auth/auth-context";
-import { formatDateTime } from "@/lib/utils";
+
+function DashboardSkeleton() {
+  return <div className="space-y-5" aria-label="正在加载医生工作台"><div className="grid grid-cols-3 border border-border bg-surface">{[1, 2, 3].map((item) => <div className="border-r border-border p-4 last:border-r-0" key={item}><Skeleton className="h-20" /></div>)}</div><div className="dashboard-workflow-grid"><div className="space-y-5"><Skeleton className="h-60" /><Skeleton className="h-[430px]" /></div><div className="space-y-5"><Skeleton className="h-64" /><Skeleton className="h-52" /><Skeleton className="h-60" /></div></div></div>;
+}
 
 export function DashboardPage() {
-  const { user } = useAuth(); const query = useQuery({ queryKey: ["doctor-dashboard"], queryFn: getDoctorDashboard });
+  const { user } = useAuth(); const query = useDoctorDashboard();
   const today = new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date());
   const doctorName = user?.realName || user?.username || "医生";
-  return <div className="mx-auto max-w-[1440px]"><header className="page-heading"><div><p className="text-sm text-muted">{today}</p><h1 className="mt-1 text-2xl font-semibold">早上好，{doctorName.endsWith("医生") ? doctorName : `${doctorName}医生`}</h1><p className="mt-2 text-sm text-muted">这里是今天需要关注的患者与问诊进展。</p></div><Button disabled title="问诊录入将在后续阶段迁移"><Plus className="h-4 w-4"/>问诊功能即将开放</Button></header>
-    {query.isError && <ErrorState message={query.error instanceof Error ? query.error.message : "工作台暂时不可用"} onRetry={() => query.refetch()} />}
-    {query.isLoading && <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">{[1,2,3,4].map((item) => <Skeleton key={item} className="h-32" />)}</div>}
-    {query.data && <><section aria-label="工作台指标" className="metric-grid"><Metric label="今日问诊" value={query.data.todayConsultationCount} detail="今日已记录的问诊" icon={CalendarDays}/><Metric label="患者总数" value={query.data.patientCount} detail="当前归属患者" icon={Users}/><Metric label="AI 报告" value={query.data.aiReportCount} detail="已生成辅助报告" icon={BrainCircuit}/><Metric label="问诊总数" value={query.data.consultationCount} detail="历史问诊记录" icon={ClipboardList}/></section>
-      <div className="dashboard-grid"><section className="workspace-section"><div className="section-heading"><div><h2>最近问诊</h2><p>优先查看尚未生成 AI 报告的问诊</p></div><Button variant="ghost" size="sm" onClick={() => query.refetch()}><RefreshCw className="h-4 w-4"/>刷新</Button></div>{query.data.recentConsultations.length ? <div className="divide-y divide-border">{query.data.recentConsultations.map((item) => <article className="clinical-row" key={item.consultationId}><div className="row-icon"><Stethoscope/></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><strong>{item.patientName}</strong><Badge tone={item.hasAiReport ? "success" : "warning"}>{item.hasAiReport ? "报告已生成" : "待生成报告"}</Badge></div><p className="mt-1 truncate text-sm text-muted">{item.chiefComplaint || "暂未填写主诉"}</p></div><div className="row-meta"><span>{formatDateTime(item.createdAt)}</span><Button asChild variant="ghost" size="icon" aria-label={`查看${item.patientName}详情`}><Link to={`/doctor/patients/${item.patientId}`}><ArrowRight className="h-4 w-4"/></Link></Button></div></article>)}</div> : <EmptyState title="暂无问诊记录" description="完成首次问诊后，最近记录会显示在这里。"/>}</section>
-        <aside className="space-y-5"><section className="workspace-section"><div className="section-heading"><div><h2>最近患者</h2><p>按最近问诊时间排序</p></div></div>{query.data.recentPatients.length ? <div className="divide-y divide-border">{query.data.recentPatients.slice(0,5).map((item) => <Link to={`/doctor/patients/${item.patientId}`} className="patient-row transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30" key={item.patientId}><div className="avatar">{item.name.slice(0,1)}</div><div className="min-w-0 flex-1"><strong className="block truncate text-sm">{item.name}</strong><span className="text-xs text-muted">{[item.gender, item.age == null ? null : `${item.age}岁`].filter(Boolean).join(" · ") || "资料待完善"}</span></div><div className="text-right text-xs text-muted"><span className="block">问诊 {item.consultationCount} 次</span><span>{formatDateTime(item.lastConsultationTime)}</span></div><ArrowRight className="h-4 w-4 shrink-0 text-muted" /></Link>)}</div> : <EmptyState title="暂无患者" description="新增患者后会显示在这里。"/>}</section>
-          <section className="ai-entry"><div className="flex items-start gap-3"><div className="grid h-10 w-10 place-items-center rounded-sm bg-primary/10 text-primary"><BrainCircuit className="h-5 w-5"/></div><div><h2 className="font-semibold">AI 辅助诊断工作区</h2><p className="mt-1 text-sm leading-6 text-muted">结构化分析病史、风险与医学依据。</p></div></div><div className="mt-5 flex items-center justify-between border-t border-border pt-4"><span className="text-xs text-muted">第二阶段开放</span><Button variant="secondary" size="sm" disabled><FileText className="h-4 w-4"/>进入工作区</Button></div></section></aside></div></>}
+  const forbidden = query.error instanceof ApiError && query.error.code === "FORBIDDEN";
+  return <div className="mx-auto max-w-[1440px]">
+    <PageHeader eyebrow={today} title={`早上好，${doctorName.endsWith("医生") ? doctorName : `${doctorName}医生`}`} description="先查看近期需要 AI 分析的问诊，再继续今天的临床工作。" actions={<Button variant="secondary" size="sm" disabled={query.isFetching} onClick={() => void query.refetch()}><RefreshCw className={`h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`} />刷新工作台</Button>} />
+    {query.isLoading && <DashboardSkeleton />}
+    {query.isError && forbidden && <div className="permission-state"><ShieldAlert className="h-7 w-7 text-warning" /><strong>无权访问医生工作台</strong><p>当前账号没有医生工作台权限，请重新登录医生账号或联系管理员。</p></div>}
+    {query.isError && !forbidden && <ErrorState message={query.error instanceof Error ? query.error.message : "医生工作台暂时不可用"} onRetry={() => void query.refetch()} />}
+    {query.data && <><DashboardSummary dashboard={query.data} /><div className="dashboard-workflow-grid"><div className="min-w-0 space-y-5"><PendingConsultationSection consultations={query.data.recentConsultations} /><RecentConsultationSection consultations={query.data.recentConsultations} /></div><aside className="space-y-5"><RecentPatientSection patients={query.data.recentPatients} /><RecentReportSection consultations={query.data.recentConsultations} /><QuickActions /></aside></div></>}
   </div>;
 }

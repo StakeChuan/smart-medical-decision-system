@@ -1,4 +1,7 @@
 export const queryKeys = {
+  dashboard: {
+    doctor: ["dashboard", "doctor"] as const,
+  },
   patients: {
     all: ["patients"] as const,
     create: ["patients", "create"] as const,

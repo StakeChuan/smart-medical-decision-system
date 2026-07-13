@@ -35,6 +35,44 @@ button { cursor: pointer; }
   .metric-block:nth-child(2n) { @apply border-r-0 xl:border-r; }
   .metric-block:last-child { @apply border-r-0; }
   .dashboard-grid { @apply mt-6 grid items-start gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.75fr)]; }
+  .dashboard-summary { @apply grid grid-cols-3 border border-border bg-surface; }
+  .dashboard-summary .metric-block { @apply min-h-28 border-b-0 border-r p-4; }
+  .dashboard-summary .metric-block:nth-child(2n) { @apply border-r; }
+  .dashboard-summary .metric-block:last-child { @apply border-r-0; }
+  .dashboard-summary .metric-block strong { @apply mt-3 text-2xl; }
+  .dashboard-workflow-grid { @apply mt-5 grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.72fr)]; }
+  .dashboard-priority-section { @apply border-l-[3px] border-l-primary; }
+  .dashboard-pending-row { @apply grid min-h-[94px] grid-cols-[40px_minmax(0,1fr)] items-center gap-3 px-4 py-4 sm:px-5 md:grid-cols-[40px_minmax(0,1fr)_auto]; }
+  .dashboard-pending-row p, .dashboard-consultation-row p { @apply mt-1 truncate text-sm text-muted; }
+  .dashboard-pending-row span:not(.inline-flex) { @apply mt-1 block text-xs text-muted; }
+  .dashboard-pending-row > a { @apply col-start-2 mt-1 justify-self-start md:col-start-auto md:mt-0 md:justify-self-auto; }
+  .dashboard-complete-state { @apply flex min-h-32 items-center justify-center gap-3 px-5 py-6 text-center sm:text-left; }
+  .dashboard-complete-state p { @apply mt-1 text-xs text-muted; }
+  .dashboard-consultation-row { @apply grid min-h-[82px] grid-cols-[40px_minmax(0,1fr)_36px] items-center gap-3 px-4 py-3 sm:px-5 md:grid-cols-[40px_minmax(0,1fr)_auto_36px]; }
+  .dashboard-row-time { @apply col-start-2 text-xs text-muted md:col-start-auto; }
+  .dashboard-consultation-row > a { @apply col-start-3 row-span-2 md:col-start-auto md:row-span-1; }
+  .dashboard-section-link { @apply text-xs font-semibold text-primary outline-none hover:underline focus-visible:underline; }
+  .dashboard-patient-row { @apply flex min-h-[72px] items-center gap-3 px-4 py-3 outline-none transition-colors hover:bg-canvas focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30 sm:px-5; }
+  .dashboard-patient-row strong { @apply block truncate text-sm; }
+  .dashboard-patient-row p { @apply mt-1 truncate text-xs text-muted; }
+  .dashboard-patient-meta { @apply hidden shrink-0 text-right text-[11px] text-muted sm:block; }
+  .dashboard-patient-meta span { @apply block; }
+  .dashboard-report-row { @apply flex min-h-[70px] items-center gap-3 px-4 py-3 outline-none transition-colors hover:bg-canvas focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30 sm:px-5; }
+  .dashboard-report-icon { @apply grid h-9 w-9 shrink-0 place-items-center rounded-sm bg-success/10 text-success; }
+  .dashboard-report-row strong { @apply block truncate text-sm; }
+  .dashboard-report-row p { @apply mt-1 text-xs text-muted; }
+  .dashboard-report-time { @apply hidden shrink-0 text-right sm:block; }
+  .dashboard-report-time span { @apply block text-[10px] text-muted; }
+  .dashboard-report-time strong { @apply mt-1 text-[11px] font-medium text-muted; }
+  .quick-action-list { @apply divide-y divide-border; }
+  .quick-action-row { @apply flex min-h-[66px] items-center gap-3 px-4 py-3 outline-none transition-colors hover:bg-canvas focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30 sm:px-5; }
+  .quick-action-row > svg { @apply shrink-0 text-primary; }
+  .quick-action-row > div { @apply min-w-0 flex-1; }
+  .quick-action-row strong { @apply block text-sm; }
+  .quick-action-row p { @apply mt-1 text-xs text-muted; }
+  .quick-action-row > span { @apply shrink-0 text-xs font-semibold text-primary; }
+  .quick-action-row.is-disabled { @apply cursor-not-allowed bg-canvas/60 opacity-60 hover:bg-canvas/60; }
+  .quick-action-row.is-disabled > span { @apply text-muted; }
   .workspace-section { @apply overflow-hidden border border-border bg-surface; }
   .section-heading { @apply flex min-h-[76px] items-center justify-between gap-4 border-b border-border px-5 py-4; }
   .section-heading h2 { @apply text-base font-semibold; }
