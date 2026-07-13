@@ -11,7 +11,7 @@ const navigation = [
   { label: "新增患者", icon: UserPlus, to: "/doctor/patients/new", enabled: true },
   { label: "新建问诊", icon: ClipboardPlus, to: "/doctor/consultations/new", enabled: true },
   { label: "AI 辅助决策", icon: BrainCircuit, to: "/doctor/ai-center", enabled: true },
-  { label: "消息", icon: MessageSquare, to: "/doctor/messages", enabled: false },
+  { label: "行动提醒", icon: MessageSquare, to: "/doctor/messages", enabled: true },
 ];
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {

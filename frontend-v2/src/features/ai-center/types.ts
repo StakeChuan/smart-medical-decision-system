@@ -11,5 +11,8 @@ export interface AiCenterRecord {
   hasAiReport: boolean;
   riskLevel: RiskLevel | null;
   riskLabel: string;
+  urgencyLabel: string | null;
+  riskWarning: string | null;
+  reportCreatedAt: string | null;
   supplementState: AiCenterSupplementState;
 }

@@ -1,4 +1,4 @@
-import { BrainCircuit, ClipboardPlus, UserPlus, Users } from "lucide-react";
+import { BellRing, BrainCircuit, ClipboardPlus, UserPlus, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const actions = [
@@ -6,6 +6,7 @@ const actions = [
   { label: "新建问诊", description: "选择患者并录入问诊", icon: ClipboardPlus, to: "/doctor/consultations/new", enabled: true },
   { label: "患者列表", description: "查找患者与历史记录", icon: Users, to: "/doctor/patients", enabled: true },
   { label: "AI 辅助决策中心", description: "审核近期辅助分析与报告", icon: BrainCircuit, to: "/doctor/ai-center", enabled: true },
+  { label: "查看行动提醒", description: "处理近期需要关注的问诊事项", icon: BellRing, to: "/doctor/messages", enabled: true },
 ];
 
 export function QuickActions() {

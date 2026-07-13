@@ -22,7 +22,20 @@ export function useAiCenterRecords() {
         else if (consultation?.aiReport) { riskLevel = consultation.aiReport.riskLevel; riskLabel = consultation.aiReport.riskLevelRaw || "未提供"; }
         else riskLabel = "未提供";
       }
-      return { consultationId: item.consultationId, patientId: item.patientId, patientName: item.patientName, chiefComplaint: item.chiefComplaint, consultationTime: item.createdAt, hasAiReport: item.hasAiReport, riskLevel, riskLabel, supplementState };
+      return {
+        consultationId: item.consultationId,
+        patientId: item.patientId,
+        patientName: item.patientName,
+        chiefComplaint: item.chiefComplaint,
+        consultationTime: item.createdAt,
+        hasAiReport: item.hasAiReport,
+        riskLevel,
+        riskLabel,
+        urgencyLabel: consultation?.aiReport?.urgencyLevelRaw ?? null,
+        riskWarning: consultation?.aiReport?.riskWarning ?? null,
+        reportCreatedAt: consultation?.aiReport?.createdAt ?? null,
+        supplementState,
+      };
     });
   }, [consultationQueries, dashboardQuery.data?.recentConsultations, patientIds]);
 

@@ -253,6 +253,44 @@ button { cursor: pointer; }
   .ai-center-empty strong { @apply mt-3; }
   .ai-center-empty p { @apply mt-2 max-w-md text-sm leading-6 text-muted; }
   .ai-center-empty > div { @apply mt-5 flex flex-wrap justify-center gap-2; }
+  .message-header-mark { @apply flex items-center gap-2 text-xs font-semibold text-primary; }
+  .message-center-notice { @apply mb-5 flex items-start gap-3 border-l-[3px] border-l-primary bg-surface p-4; }
+  .message-center-notice > svg { @apply mt-0.5 shrink-0 text-primary; }
+  .message-center-notice strong { @apply text-sm; }
+  .message-center-notice p { @apply mt-1 max-w-3xl text-xs leading-5 text-muted; }
+  .message-summary { @apply grid grid-cols-2 border border-border bg-surface lg:grid-cols-4; }
+  .message-summary > div { @apply min-h-24 border-b border-r border-border p-4 lg:border-b-0; }
+  .message-summary > div:nth-child(2n) { @apply border-r-0 lg:border-r; }
+  .message-summary > div:last-child { @apply border-r-0; }
+  .message-summary > div > div { @apply flex items-center justify-between gap-2 text-xs text-muted; }
+  .message-summary > div > div svg { @apply text-primary; }
+  .message-summary > div > strong { @apply mt-3 block text-2xl; }
+  .message-workspace { @apply mt-5 overflow-hidden border border-border bg-surface; }
+  .message-workspace-heading { @apply flex min-h-[76px] items-center justify-between gap-4 border-b border-border px-4 py-4 sm:px-5; }
+  .message-workspace-heading h2 { @apply text-base font-semibold; }
+  .message-workspace-heading p { @apply mt-1 text-xs text-muted; }
+  .message-tabs { @apply flex overflow-x-auto border-b border-border px-3 sm:px-5; }
+  .message-tabs button { @apply flex h-12 shrink-0 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-medium text-muted outline-none; }
+  .message-tabs button[aria-selected="true"] { @apply border-primary text-primary; }
+  .message-tabs button span { @apply grid min-w-5 place-items-center rounded-full bg-canvas px-1 text-[10px]; }
+  .message-item { @apply grid grid-cols-[40px_minmax(0,1fr)] items-start gap-3 px-4 py-5 sm:px-5 lg:grid-cols-[40px_minmax(0,1fr)_auto]; }
+  .message-item.is-reviewed { @apply bg-canvas/50; }
+  .message-item-icon { @apply grid h-10 w-10 place-items-center rounded-sm bg-primary/10 text-primary; }
+  .message-item-icon.type-risk_review { @apply bg-danger/10 text-danger; }
+  .message-item-icon.type-pending_analysis { @apply bg-warning/10 text-warning; }
+  .message-item-title { @apply flex flex-wrap items-center gap-2; }
+  .message-item-title + p { @apply mt-2 text-sm leading-6 text-muted; }
+  .message-patient-context { @apply mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted; }
+  .message-patient-context strong { @apply text-foreground; }
+  .message-chief-complaint { @apply mt-2 text-xs text-muted; }
+  .message-risk-facts { @apply mt-3 flex flex-wrap gap-x-4 gap-y-2 border-l-2 border-danger/40 bg-danger/5 px-3 py-2 text-xs text-muted; }
+  .message-risk-facts span:last-child { @apply basis-full; }
+  .message-data-warning { @apply mt-2 text-xs text-warning; }
+  .message-item > button { @apply col-start-2 mt-3 justify-self-start lg:col-start-auto lg:mt-0; }
+  .message-empty { @apply flex min-h-64 flex-col items-center justify-center px-6 py-10 text-center; }
+  .message-empty > svg { @apply mb-3 text-muted; }
+  .message-empty p { @apply mt-2 max-w-md text-sm leading-6 text-muted; }
+  .message-empty > div { @apply mt-5 flex flex-wrap justify-center gap-2; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }
