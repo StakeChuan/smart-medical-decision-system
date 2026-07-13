@@ -169,6 +169,30 @@ button { cursor: pointer; }
   .consultation-selection-notice { @apply flex min-h-36 items-center justify-center gap-3 border border-dashed border-border bg-surface px-6 text-center; }
   .consultation-selection-notice strong { @apply text-sm; }
   .consultation-selection-notice p { @apply mt-1 text-xs text-muted; }
+  .patient-create-intro { @apply mb-5 flex items-start gap-3 border-l-[3px] border-l-primary bg-surface p-5; }
+  .patient-create-intro > svg:first-child { @apply mt-0.5 shrink-0 text-primary; }
+  .patient-create-intro strong { @apply text-sm; }
+  .patient-create-intro p { @apply mt-1 text-xs leading-5 text-muted; }
+  .patient-form { @apply space-y-5; }
+  .patient-form-section { @apply overflow-hidden border border-border bg-surface; }
+  .patient-form-section-heading { @apply border-b border-border px-5 py-4; }
+  .patient-form-section-heading > span { @apply text-[11px] font-semibold text-primary; }
+  .patient-form-section-heading h2 { @apply mt-1 text-base font-semibold; }
+  .patient-form-section-heading p { @apply mt-1 text-xs text-muted; }
+  .patient-form-fields { @apply divide-y divide-border; }
+  .patient-form-fields > label { @apply grid gap-4 px-5 py-5 md:grid-cols-[minmax(180px,0.55fr)_minmax(0,1.45fr)]; }
+  .patient-form-fields > label > div:first-child > span { @apply text-sm font-semibold; }
+  .patient-form-fields > label > div:first-child b { @apply font-normal text-danger; }
+  .patient-form-fields > label > div:first-child p { @apply mt-1 text-xs leading-5 text-muted; }
+  .patient-form-fields input, .patient-form-fields select, .patient-form-fields textarea { @apply block w-full rounded-sm border border-border bg-surface px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15; }
+  .patient-form-fields input, .patient-form-fields select { @apply h-10; }
+  .patient-form-fields textarea { @apply min-h-28 resize-y py-2.5 leading-6; }
+  .patient-form-fields input[aria-invalid="true"], .patient-form-fields select[aria-invalid="true"], .patient-form-fields textarea[aria-invalid="true"] { @apply border-danger focus:border-danger focus:ring-danger/15; }
+  .patient-form-error { @apply border-l-2 border-danger bg-danger/5 px-4 py-3 text-sm text-danger; }
+  .patient-submit-bar { @apply flex flex-col justify-between gap-4 border border-border bg-surface p-4 sm:flex-row sm:items-center; }
+  .patient-submit-bar > div { @apply flex items-start gap-3; }
+  .patient-submit-bar p strong { @apply block text-sm; }
+  .patient-submit-bar p span { @apply mt-1 block text-xs text-muted; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }

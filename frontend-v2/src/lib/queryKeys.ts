@@ -1,6 +1,7 @@
 export const queryKeys = {
   patients: {
     all: ["patients"] as const,
+    create: ["patients", "create"] as const,
     detail: (patientId: number) => ["patients", patientId] as const,
     consultations: (patientId: number) => ["patients", patientId, "consultations"] as const,
   },

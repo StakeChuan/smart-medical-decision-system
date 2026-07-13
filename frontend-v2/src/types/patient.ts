@@ -23,3 +23,23 @@ export interface Patient {
   allergyHistory: string | null;
   createdAt: string;
 }
+
+export interface CreatePatientDto {
+  姓名: string;
+  性别: string | null;
+  年龄: number | null;
+  电话: string | null;
+  地址: string | null;
+  既往病史: string | null;
+  过敏史: string | null;
+}
+
+export interface CreatePatientInput {
+  name: string;
+  gender: string | null;
+  age: number | null;
+  phone: string | null;
+  address: string | null;
+  medicalHistory: string | null;
+  allergyHistory: string | null;
+}

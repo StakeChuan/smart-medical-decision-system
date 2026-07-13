@@ -1,4 +1,4 @@
-import { ClipboardPlus, Search, ShieldAlert, Users, X } from "lucide-react";
+import { ClipboardPlus, Search, ShieldAlert, UserPlus, Users, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { ApiError } from "@/api/client";
@@ -24,7 +24,7 @@ export function PatientsPage() {
   const forbidden = query.error instanceof ApiError && query.error.code === "FORBIDDEN";
 
   return <div className="mx-auto max-w-[1440px]">
-    <PageHeader eyebrow="患者管理" title="患者列表" description="查找患者并进入其问诊时间线与 AI 报告。" actions={<><div className="text-sm text-muted">{query.data ? `共 ${query.data.length} 位患者` : "正在获取患者"}</div><Button asChild size="sm"><Link to="/doctor/consultations/new"><ClipboardPlus className="h-4 w-4" />新建问诊</Link></Button></>} />
+    <PageHeader eyebrow="患者管理" title="患者列表" description="查找患者并进入其问诊时间线与 AI 报告。" actions={<><div className="text-sm text-muted">{query.data ? `共 ${query.data.length} 位患者` : "正在获取患者"}</div><Button asChild variant="secondary" size="sm"><Link to="/doctor/consultations/new"><ClipboardPlus className="h-4 w-4" />新建问诊</Link></Button><Button asChild size="sm"><Link to="/doctor/patients/new"><UserPlus className="h-4 w-4" />新增患者</Link></Button></>} />
     <section className="patient-directory">
       <div className="patient-directory-toolbar"><div><h2>全部患者</h2><p>仅显示当前医生有权查看的患者资料</p></div><label className="patient-search"><Search className="h-4 w-4" /><span className="sr-only">搜索患者</span><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索姓名或患者 ID" aria-label="搜索患者" />{search && <Button variant="ghost" size="icon" aria-label="清除搜索" onClick={() => setSearch("")}><X className="h-4 w-4" /></Button>}</label></div>
       {query.isLoading && <PatientListSkeleton />}
