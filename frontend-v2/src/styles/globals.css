@@ -527,6 +527,16 @@ button { cursor: pointer; }
   .admin-ai-audit-error > div { @apply min-w-0 flex-1; }
   .admin-ai-audit-error strong { @apply text-sm; }
   .admin-ai-audit-error p { @apply mt-1 text-xs leading-5 text-muted; }
+  .route-loading { @apply flex min-h-[240px] items-center justify-center gap-4 border border-border bg-surface px-6 text-left; }
+  .route-loading-mark { @apply grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary; }
+  .route-loading-mark svg { animation: route-loading-pulse 1.15s ease-in-out infinite; }
+  .route-loading strong { @apply block text-sm; }
+  .route-loading p { @apply mt-1 text-xs text-muted; }
+  .route-load-error { @apply flex min-h-[280px] flex-col items-center justify-center border border-danger/20 bg-danger/5 px-6 text-center; }
+  .route-load-error > svg { @apply text-danger; }
+  .route-load-error strong { @apply mt-3 text-base; }
+  .route-load-error p { @apply mt-2 max-w-lg text-sm leading-6 text-muted; }
+  .route-load-error button { @apply mt-5; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }
@@ -550,6 +560,7 @@ button { cursor: pointer; }
 
 @keyframes dialog-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes dialog-scale-in { from { opacity: 0; transform: translate(-50%, -48%) scale(.98); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes route-loading-pulse { 0%, 100% { opacity: .35; transform: scale(.92); } 50% { opacity: 1; transform: scale(1); } }
 
 @media print {
   @page { margin: 14mm; }
