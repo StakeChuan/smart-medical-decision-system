@@ -11,6 +11,10 @@ export const queryKeys = {
       detail: (patientId: number) => ["admin", "patients", patientId] as const,
       consultations: (patientId: number) => ["admin", "patients", patientId, "consultations"] as const,
     },
+    logs: {
+      list: (keyword: string, module: string, action: string, page: number, pageSize: number) =>
+        ["admin", "logs", "list", keyword, module, action, page, pageSize] as const,
+    },
   },
   dashboard: {
     doctor: ["dashboard", "doctor"] as const,

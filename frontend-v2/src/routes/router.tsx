@@ -4,6 +4,7 @@ import { AdminAppShell } from "@/components/layout/admin-app-shell";
 import { AdminDashboardPage } from "@/features/admin/admin-dashboard-page";
 import { AdminDoctorDetailPage } from "@/features/admin/doctors/admin-doctor-detail-page";
 import { AdminDoctorListPage } from "@/features/admin/doctors/admin-doctor-list-page";
+import { AdminOperationLogPage } from "@/features/admin/logs/admin-operation-log-page";
 import { AdminPatientDetailPage } from "@/features/admin/patients/admin-patient-detail-page";
 import { AdminPatientListPage } from "@/features/admin/patients/admin-patient-list-page";
 import { AiCenterPage } from "@/features/ai-center/ai-center-page";
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
     { path: "/admin/doctors/:doctorId", element: <AdminDoctorDetailPage /> },
     { path: "/admin/patients", element: <AdminPatientListPage /> },
     { path: "/admin/patients/:patientId", element: <AdminPatientDetailPage /> },
+    { path: "/admin/logs", element: <AdminOperationLogPage /> },
   ] }] },
   { element: <DoctorGuard />, children: [{ element: <AppShell />, children: [
     { path: "/doctor/dashboard", element: <DashboardPage /> },

@@ -9,7 +9,7 @@ const navigation = [
   { label: "系统概览", icon: BarChart3, to: "/admin/dashboard", enabled: true },
   { label: "医生管理", icon: Stethoscope, to: "/admin/doctors", enabled: true },
   { label: "患者管理", icon: Users, to: "/admin/patients", enabled: true },
-  { label: "操作日志", icon: FileClock, to: "/admin/logs", enabled: false },
+  { label: "操作日志", icon: FileClock, to: "/admin/logs", enabled: true },
   { label: "系统设置", icon: Settings, to: "/admin/settings", enabled: false },
 ];
 
