@@ -15,6 +15,12 @@ export const queryKeys = {
       list: (keyword: string, module: string, action: string, page: number, pageSize: number) =>
         ["admin", "logs", "list", keyword, module, action, page, pageSize] as const,
     },
+    settings: {
+      account: ["admin", "settings", "account"] as const,
+      health: ["admin", "settings", "health"] as const,
+      updateProfile: ["admin", "settings", "update-profile"] as const,
+      changePassword: ["admin", "settings", "change-password"] as const,
+    },
   },
   dashboard: {
     doctor: ["dashboard", "doctor"] as const,

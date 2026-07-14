@@ -5,7 +5,7 @@ const actions = [
   { label: "医生管理", target: "/admin/doctors", description: "医生账号、状态与使用情况", icon: Stethoscope, enabled: true },
   { label: "患者管理", target: "/admin/patients", description: "全院患者档案与归属关系", icon: Users, enabled: true },
   { label: "操作日志", target: "/admin/logs", description: "系统操作与安全审计记录", icon: FileClock, enabled: true },
-  { label: "系统设置", target: "/admin/settings", description: "系统参数与账号安全配置", icon: Settings, enabled: false },
+  { label: "系统设置", target: "/admin/settings", description: "管理员账号与系统连接状态", icon: Settings, enabled: true },
 ];
 
 export function AdminQuickActions() {
