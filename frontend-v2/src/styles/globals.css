@@ -483,6 +483,50 @@ button { cursor: pointer; }
   .admin-settings-capabilities strong { @apply block text-sm; }
   .admin-settings-capabilities p { @apply mt-1 text-xs leading-5 text-muted; }
   .admin-settings-capabilities span { @apply col-start-2 w-fit border border-border bg-canvas px-2 py-1 text-[10px] font-semibold text-muted sm:col-start-auto; }
+  .admin-ai-scope { @apply mb-5 border-l-2 border-primary bg-primary/5 px-4 py-3; }
+  .admin-ai-scope strong { @apply text-sm; }
+  .admin-ai-scope p { @apply mt-1 text-xs leading-5 text-muted; }
+  .admin-ai-layout { @apply grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)]; }
+  .admin-ai-panel { @apply overflow-hidden border border-border bg-surface; }
+  .admin-ai-panel-heading { @apply flex min-h-[76px] flex-wrap items-start gap-3 border-b border-border px-4 py-4 sm:px-5; }
+  .admin-ai-panel-heading > svg { @apply mt-0.5 shrink-0 text-primary; }
+  .admin-ai-panel-heading > div { @apply min-w-0 flex-1; }
+  .admin-ai-panel-heading h2 { @apply text-base font-semibold; }
+  .admin-ai-panel-heading p { @apply mt-1 text-xs leading-5 text-muted; }
+  .admin-ai-panel-heading > a { @apply ml-8 shrink-0 sm:ml-0; }
+  .admin-ai-capability-list { @apply divide-y divide-border; }
+  .admin-ai-capability-list > div { @apply grid min-h-[92px] grid-cols-[20px_minmax(0,1fr)] gap-x-3 gap-y-2 px-4 py-4 sm:grid-cols-[20px_minmax(0,1fr)_auto] sm:items-center sm:px-5; }
+  .admin-ai-capability-list > div > svg { @apply mt-0.5 text-muted sm:mt-0; }
+  .admin-ai-capability-list strong { @apply block text-sm; }
+  .admin-ai-capability-list p { @apply mt-1 text-xs leading-5 text-muted; }
+  .admin-ai-capability-list span { @apply col-start-2 w-fit border border-border bg-canvas px-2 py-1 text-[10px] font-semibold text-muted sm:col-start-auto; }
+  .admin-ai-stat-grid { @apply grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-5; }
+  .admin-ai-stat-grid > div { @apply min-h-[132px] bg-surface p-4; }
+  .admin-ai-stat-grid svg { @apply text-primary; }
+  .admin-ai-stat-grid span { @apply mt-3 block text-xs text-muted; }
+  .admin-ai-stat-primary { @apply sm:col-span-2 lg:col-span-1; }
+  .admin-ai-stat-primary strong { @apply mt-2 block text-2xl; }
+  .admin-ai-stat-primary p { @apply mt-1 text-[10px] leading-4 text-muted; }
+  .admin-ai-stat-primary button { @apply mt-2 px-0; }
+  .admin-ai-stat-unavailable strong { @apply mt-2 block text-sm text-muted; }
+  .admin-ai-unavailable { @apply flex min-h-44 items-start gap-3 p-5; }
+  .admin-ai-unavailable > svg { @apply mt-0.5 shrink-0 text-muted; }
+  .admin-ai-unavailable strong { @apply text-sm; }
+  .admin-ai-unavailable p { @apply mt-2 text-xs leading-5 text-muted; }
+  .admin-ai-audit-list { @apply divide-y divide-border; }
+  .admin-ai-audit-list article { @apply grid gap-3 px-4 py-4 sm:grid-cols-[100px_minmax(0,1fr)_180px] sm:items-center sm:px-5; }
+  .admin-ai-audit-action span { @apply inline-block border border-primary/25 bg-primary/5 px-2 py-1 text-[11px] font-semibold text-primary; }
+  .admin-ai-audit-action small { @apply mt-1 block text-[10px] text-muted; }
+  .admin-ai-audit-list article > div:nth-child(2) { @apply min-w-0; }
+  .admin-ai-audit-list article > div:nth-child(2) strong { @apply block break-words text-sm; }
+  .admin-ai-audit-list article > div:nth-child(2) p { @apply mt-1 text-xs text-muted; }
+  .admin-ai-audit-list article > div:last-child { @apply flex flex-col items-start gap-1 text-xs text-muted sm:items-end; }
+  .admin-ai-audit-list time { @apply text-[11px]; }
+  .admin-ai-audit-error { @apply flex min-h-40 flex-col items-start gap-3 p-5 sm:flex-row sm:items-center; }
+  .admin-ai-audit-error > svg { @apply shrink-0 text-warning; }
+  .admin-ai-audit-error > div { @apply min-w-0 flex-1; }
+  .admin-ai-audit-error strong { @apply text-sm; }
+  .admin-ai-audit-error p { @apply mt-1 text-xs leading-5 text-muted; }
   .ds-section { @apply mb-8 border-t border-border pt-5; }
   .ds-section > h2 { @apply mb-4 text-base font-semibold; }
   .ds-section label > span { @apply mb-2 block text-sm font-medium; }

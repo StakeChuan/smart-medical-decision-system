@@ -1,4 +1,4 @@
-import { Activity, BarChart3, ChevronDown, FileClock, LogOut, Menu, Settings, ShieldCheck, Stethoscope, UserRound, Users, X } from "lucide-react";
+import { Activity, BarChart3, BrainCircuit, ChevronDown, FileClock, LogOut, Menu, Settings, ShieldCheck, Stethoscope, UserRound, Users, X } from "lucide-react";
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ const navigation = [
   { label: "系统概览", icon: BarChart3, to: "/admin/dashboard", enabled: true },
   { label: "医生管理", icon: Stethoscope, to: "/admin/doctors", enabled: true },
   { label: "患者管理", icon: Users, to: "/admin/patients", enabled: true },
+  { label: "AI 管理中心", icon: BrainCircuit, to: "/admin/ai", enabled: true },
   { label: "操作日志", icon: FileClock, to: "/admin/logs", enabled: true },
   { label: "系统设置", icon: Settings, to: "/admin/settings", enabled: true },
 ];

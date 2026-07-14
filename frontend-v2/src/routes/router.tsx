@@ -2,6 +2,7 @@ import { Navigate, Outlet, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "@/components/layout/app-shell";
 import { AdminAppShell } from "@/components/layout/admin-app-shell";
 import { AdminDashboardPage } from "@/features/admin/admin-dashboard-page";
+import { AdminAiManagementPage } from "@/features/admin/ai/admin-ai-management-page";
 import { AdminDoctorDetailPage } from "@/features/admin/doctors/admin-doctor-detail-page";
 import { AdminDoctorListPage } from "@/features/admin/doctors/admin-doctor-list-page";
 import { AdminOperationLogPage } from "@/features/admin/logs/admin-operation-log-page";
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
     { path: "/admin/doctors/:doctorId", element: <AdminDoctorDetailPage /> },
     { path: "/admin/patients", element: <AdminPatientListPage /> },
     { path: "/admin/patients/:patientId", element: <AdminPatientDetailPage /> },
+    { path: "/admin/ai", element: <AdminAiManagementPage /> },
     { path: "/admin/logs", element: <AdminOperationLogPage /> },
     { path: "/admin/settings", element: <AdminSettingsPage /> },
   ] }] },

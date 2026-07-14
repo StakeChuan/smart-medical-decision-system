@@ -1,6 +1,9 @@
 export const queryKeys = {
   admin: {
     dashboard: ["admin", "dashboard"] as const,
+    ai: {
+      audit: ["admin", "ai", "audit", "recent"] as const,
+    },
     doctors: {
       list: (keyword = "") => ["admin", "doctors", "list", keyword] as const,
       detail: (doctorId: number) => ["admin", "doctors", doctorId] as const,
