@@ -5,6 +5,9 @@ export const queryKeys = {
       list: (keyword = "") => ["admin", "doctors", "list", keyword] as const,
       detail: (doctorId: number) => ["admin", "doctors", doctorId] as const,
       patients: (doctorId: number) => ["admin", "doctors", doctorId, "patients"] as const,
+      update: (doctorId: number) => ["admin", "doctors", doctorId, "update"] as const,
+      status: (doctorId: number) => ["admin", "doctors", doctorId, "status"] as const,
+      resetPassword: (doctorId: number) => ["admin", "doctors", doctorId, "reset-password"] as const,
     },
     patients: {
       list: (doctorId: number | null = null) => ["admin", "patients", "list", doctorId ?? "all"] as const,

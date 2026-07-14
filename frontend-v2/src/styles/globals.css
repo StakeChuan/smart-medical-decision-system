@@ -356,6 +356,35 @@ button { cursor: pointer; }
   .admin-doctor-not-found strong { @apply mt-3; }
   .admin-doctor-not-found p { @apply mt-2 text-sm text-muted; }
   .admin-doctor-not-found a { @apply mt-5; }
+  .doctor-security-title { @apply mb-3 flex items-start gap-3 border-b border-border pb-3; }
+  .doctor-security-title > svg { @apply mt-0.5 shrink-0 text-primary; }
+  .doctor-security-title h2 { @apply text-base font-semibold; }
+  .doctor-security-title p { @apply mt-1 text-xs leading-5 text-muted; }
+  .doctor-security-layout { @apply grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.85fr)]; }
+  .doctor-security-card { @apply overflow-hidden border border-border bg-surface; }
+  .doctor-security-heading { @apply flex min-h-[76px] items-start gap-3 border-b border-border px-4 py-4 sm:px-5; }
+  .doctor-security-heading > svg { @apply mt-0.5 shrink-0 text-primary; }
+  .doctor-security-heading h3 { @apply text-sm font-semibold; }
+  .doctor-security-heading p { @apply mt-1 text-xs leading-5 text-muted; }
+  .doctor-security-fields { @apply divide-y divide-border; }
+  .doctor-security-fields > label { @apply grid gap-3 px-4 py-4 sm:grid-cols-[130px_minmax(0,1fr)] sm:items-start sm:px-5; }
+  .doctor-security-fields > label > span { @apply pt-2 text-xs font-semibold; }
+  .doctor-security-actions { @apply flex justify-end border-t border-border bg-canvas/40 px-4 py-4 sm:px-5; }
+  .doctor-security-error { @apply border-t border-danger/20 bg-danger/5 px-4 py-3 text-xs leading-5 text-danger sm:px-5; }
+  .doctor-security-success { @apply flex items-center gap-2 border-t border-success/20 bg-success/5 px-4 py-3 text-xs text-success sm:px-5; }
+  .doctor-security-note { @apply flex items-start gap-2 border-t border-warning/20 bg-warning/5 px-4 py-3 text-xs leading-5 text-muted sm:px-5; }
+  .doctor-security-note > svg { @apply mt-0.5 shrink-0 text-warning; }
+  .doctor-status-body { @apply flex flex-col items-start justify-between gap-4 px-4 py-5 sm:flex-row sm:items-center sm:px-5; }
+  .doctor-status-indicator span { @apply text-sm font-semibold; }
+  .doctor-status-indicator p { @apply mt-1 text-xs text-muted; }
+  .doctor-status-indicator.is-active span { @apply text-success; }
+  .doctor-status-indicator.is-inactive span { @apply text-danger; }
+  .confirm-dialog-overlay { @apply fixed inset-0 z-50 bg-slate-950/45; animation: dialog-fade-in 120ms ease-out; }
+  .confirm-dialog-content { @apply fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-32px)] max-w-[500px] -translate-x-1/2 -translate-y-1/2 grid-cols-[40px_minmax(0,1fr)] gap-4 border border-border bg-surface p-5 shadow-xl outline-none sm:p-6; animation: dialog-scale-in 140ms ease-out; }
+  .confirm-dialog-icon { @apply grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary; }
+  .confirm-dialog-icon.is-danger { @apply bg-danger/10 text-danger; }
+  .confirm-dialog-close { @apply absolute right-3 top-3; }
+  .confirm-dialog-actions { @apply col-span-2 mt-2 flex justify-end gap-2 border-t border-border pt-4; }
   .admin-patient-toolbar { @apply flex flex-col justify-between gap-4 border-b border-border px-4 py-4 sm:px-5 md:flex-row md:items-end; }
   .admin-patient-toolbar h2 { @apply text-base font-semibold; }
   .admin-patient-toolbar p { @apply mt-1 text-xs text-muted; }
@@ -474,6 +503,9 @@ button { cursor: pointer; }
   .metric-block { min-height: 118px; }
   .metric-block strong { font-size: 24px; }
 }
+
+@keyframes dialog-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-scale-in { from { opacity: 0; transform: translate(-50%, -48%) scale(.98); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 
 @media print {
   @page { margin: 14mm; }
