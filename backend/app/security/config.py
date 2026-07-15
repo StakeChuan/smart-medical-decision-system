@@ -1,9 +1,11 @@
 import os
 from collections.abc import Mapping
+from typing import Literal
 
 
 DEVELOPMENT_TOKEN_SECRET = "smart-medical-development-only-secret-change-before-production"
 INSECURE_DEMO_SECRET = "smart-medical-demo-secret"
+MedicalAgentEngine = Literal["langgraph", "legacy"]
 
 
 def _environment(source: Mapping[str, str]) -> str:
@@ -36,3 +38,13 @@ def get_token_expire_seconds(environ: Mapping[str, str] | None = None) -> int:
     if value <= 0:
         raise RuntimeError("TOKEN_EXPIRE_SECONDS must be greater than zero")
     return value
+
+
+def get_medical_agent_engine(
+    environ: Mapping[str, str] | None = None,
+) -> MedicalAgentEngine:
+    source = os.environ if environ is None else environ
+    engine = source.get("MEDICAL_AGENT_ENGINE", "langgraph").strip().lower() or "langgraph"
+    if engine not in {"langgraph", "legacy"}:
+        raise RuntimeError("MEDICAL_AGENT_ENGINE must be 'langgraph' or 'legacy'")
+    return engine

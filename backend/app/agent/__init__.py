@@ -1,4 +1,4 @@
-from app.agent.agent import run_medical_agent
+from app.agent.agent import run_medical_agent, verify_medical_agent_engine
 from app.agent.schemas import (
     AgentConfigurationError,
     AgentConnectionError,
@@ -6,6 +6,7 @@ from app.agent.schemas import (
     AgentServiceError,
     AgentTimeoutError,
     AgentToolError,
+    AgentWorkflowError,
     ConsultationNotFoundError,
     MedicalAgentError,
     MedicalReportPayload,
@@ -18,8 +19,10 @@ __all__ = [
     "AgentServiceError",
     "AgentTimeoutError",
     "AgentToolError",
+    "AgentWorkflowError",
     "ConsultationNotFoundError",
     "MedicalAgentError",
     "MedicalReportPayload",
     "run_medical_agent",
+    "verify_medical_agent_engine",
 ]

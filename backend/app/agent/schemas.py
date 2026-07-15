@@ -133,3 +133,7 @@ class ReportResponseError(AgentResponseError):
 
 class AgentToolError(MedicalAgentError):
     category = "tool_error"
+
+
+class AgentWorkflowError(MedicalAgentError):
+    category = "workflow_error"

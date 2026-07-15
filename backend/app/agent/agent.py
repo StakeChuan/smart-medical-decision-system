@@ -1,7 +1,9 @@
+import importlib
+
 from openai import OpenAI
 from sqlalchemy.orm import Session
 
-from app.agent.schemas import MedicalReportPayload
+from app.agent.schemas import AgentWorkflowError, MedicalReportPayload
 from app.agent.state import MedicalAgentState
 from app.agent.tools import (
     assess_medical_risk,
@@ -10,9 +12,26 @@ from app.agent.tools import (
     get_dashscope_client,
     get_patient_history,
 )
+from app.security.config import get_medical_agent_engine
 
 
-def run_medical_agent(
+MEDICAL_AGENT_ENGINE = get_medical_agent_engine()
+COMPILED_MEDICAL_AGENT_GRAPH = None
+
+
+def _load_compiled_medical_agent_graph():
+    try:
+        graph_module = importlib.import_module("app.agent.graph.graph")
+        return graph_module.COMPILED_MEDICAL_AGENT_GRAPH
+    except Exception as exc:
+        raise RuntimeError("Medical Agent graph initialization failed") from exc
+
+
+if MEDICAL_AGENT_ENGINE == "langgraph":
+    COMPILED_MEDICAL_AGENT_GRAPH = _load_compiled_medical_agent_graph()
+
+
+def _run_medical_agent_legacy(
     consultation_id: int,
     db: Session,
     client: OpenAI | None = None,
@@ -35,3 +54,51 @@ def run_medical_agent(
     state.risk_assessment = assess_medical_risk(model_client, state)
     state.final_report = generate_medical_report(model_client, state)
     return state.final_report
+
+
+def _run_medical_agent_graph(
+    consultation_id: int,
+    db: Session,
+    client: OpenAI | None = None,
+) -> MedicalReportPayload:
+    if COMPILED_MEDICAL_AGENT_GRAPH is None:
+        raise AgentWorkflowError("Medical Agent graph is not loaded")
+
+    from app.agent.graph.state import MedicalAgentGraphContext, create_initial_graph_state
+
+    try:
+        result = COMPILED_MEDICAL_AGENT_GRAPH.invoke(
+            create_initial_graph_state(consultation_id),
+            context=MedicalAgentGraphContext(db=db, client=client),
+        )
+    except AgentWorkflowError:
+        raise
+    except Exception as exc:
+        raise AgentWorkflowError("Medical Agent workflow execution failed") from exc
+
+    error = result.get("error")
+    if error is not None:
+        raise error.to_exception()
+
+    report = result.get("medical_report")
+    if not isinstance(report, MedicalReportPayload):
+        raise AgentWorkflowError("Medical Agent workflow did not produce a report")
+    return report
+
+
+def run_medical_agent(
+    consultation_id: int,
+    db: Session,
+    client: OpenAI | None = None,
+) -> MedicalReportPayload:
+    if MEDICAL_AGENT_ENGINE == "legacy":
+        return _run_medical_agent_legacy(consultation_id, db, client=client)
+    return _run_medical_agent_graph(consultation_id, db, client=client)
+
+
+def verify_medical_agent_engine() -> dict[str, str | bool]:
+    return {
+        "engine": MEDICAL_AGENT_ENGINE,
+        "graph_loaded": COMPILED_MEDICAL_AGENT_GRAPH is not None,
+        "legacy_available": callable(_run_medical_agent_legacy),
+    }
