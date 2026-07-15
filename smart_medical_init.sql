@@ -141,11 +141,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 INSERT INTO users (id, username, password, real_name, role, is_active)
 VALUES
-    (1, 'admin', '228460', '系统管理员', 'admin', 1),
-    (2, 'luckyizu', '228460', 'luckyizu医生', 'doctor', 1)
+    (1, 'admin', '$2b$12$U8gl03rllHniN6yuJbPyfeVmH7W/QCqLR9SbFfwf6nlI9eDhJ0YIW', '系统管理员', 'admin', 1),
+    (2, 'luckyizu', '$2b$12$kUeTKn2qViTIgUY1af0DHuEUKHQF0Jid4FC66LzUjcMun9NnjjP0i', 'luckyizu医生', 'doctor', 1)
 ON DUPLICATE KEY UPDATE
     username = VALUES(username),
-    password = VALUES(password),
     real_name = VALUES(real_name),
     role = VALUES(role),
     is_active = VALUES(is_active);

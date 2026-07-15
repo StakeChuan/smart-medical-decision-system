@@ -19,10 +19,11 @@ DB_USER=root
 DB_PASSWORD=你的MySQL密码
 DB_NAME=smart_medical_system
 
-APP_TOKEN_SECRET=smart-medical-demo-secret
-APP_TOKEN_EXPIRE_SECONDS=43200
+ENVIRONMENT=development
+APP_TOKEN_SECRET=
+TOKEN_EXPIRE_SECONDS=43200
 
-DASHSCOPE_API_KEY=你的阿里云百炼APIKey
+DASHSCOPE_API_KEY=
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 DASHSCOPE_MODEL=qwen-plus
 DASHSCOPE_TIMEOUT=60
@@ -31,7 +32,9 @@ DASHSCOPE_TIMEOUT=60
 说明：
 
 - `DB_*` 用于连接 MySQL。
-- `APP_TOKEN_SECRET` 用于生成登录 token，正式环境建议改成更复杂的随机字符串。
+- 本机开发可使用 `ENVIRONMENT=development`；公网或正式部署应使用 `ENVIRONMENT=production`。
+- production 环境必须设置至少 32 个字符的 `APP_TOKEN_SECRET`，且不能使用演示密钥。可通过 `python -c "import secrets; print(secrets.token_urlsafe(48))"` 生成。
+- `TOKEN_EXPIRE_SECONDS` 控制登录凭证有效期；旧配置名 `APP_TOKEN_EXPIRE_SECONDS` 仍兼容。
 - `DASHSCOPE_API_KEY` 是阿里云百炼 API Key，必须填写。
 - `.env` 包含敏感信息，不能提交到 GitHub。
 
@@ -52,11 +55,22 @@ source E:/软件/python项目/pythonProject/基于大模型的智慧辅助医疗
 source E:/软件/python项目/pythonProject/基于大模型的智慧辅助医疗决策系统/update_users.sql;
 ```
 
+旧账号密码迁移为 bcrypt 前，先在 `backend` 目录执行只读检查，再确认应用：
+
+```bat
+python scripts\migrate_password_hashes.py
+python scripts\migrate_password_hashes.py --apply
+```
+
+迁移不会修改用户名、角色或原始密码含义，只把 `users.password` 中的历史明文替换为 bcrypt hash。即使暂未运行批量迁移，历史账号首次正确登录时也会自动升级。
+
 ## 3. 安装依赖
 
 ```bat
 pip install -r requirements.txt
 ```
+
+本阶段新增的运行依赖只有 `bcrypt`。
 
 ## 4. 启动服务
 
@@ -103,3 +117,13 @@ http://127.0.0.1:8000/docs
 管理员：admin / 228460
 医生：luckyizu / 228460
 ```
+
+数据库只保存以上密码的 bcrypt hash，不保存或查询明文密码。
+
+## 7. 安全测试
+
+```bat
+python -m unittest discover -s tests -v
+```
+
+密码修改后，既有登录 token 仍按原设计有效到过期时间；本阶段没有引入 token 撤销表或改变前端认证协议。

@@ -1,5 +1,5 @@
 .env
-backend/.env
+*.env
 __pycache__/
 *.pyc
 .venv/
@@ -8,6 +8,7 @@ node_modules/
 .idea/
 .vscode/
 .DS_Store
+
 # React / Vite frontend
 frontend-v2/dist/
 frontend-v2/*.tsbuildinfo

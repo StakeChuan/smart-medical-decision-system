@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 PHONE_PATTERN = re.compile(r"^[0-9+\-\s]{6,20}$")
+MAX_BCRYPT_PASSWORD_BYTES = 72
 
 
 class AppBaseModel(BaseModel):
@@ -22,17 +23,31 @@ def normalize_text(value: str | None) -> str | None:
     return stripped or None
 
 
+def normalize_password(value: str) -> str:
+    normalized = normalize_text(value)
+    if not normalized:
+        raise ValueError("密码不能为空")
+    if len(normalized.encode("utf-8")) > MAX_BCRYPT_PASSWORD_BYTES:
+        raise ValueError("密码不能超过 72 个 UTF-8 字节")
+    return normalized
+
+
 class LoginRequest(AppBaseModel):
     username: str = Field(..., alias="用户名", min_length=1, max_length=50, examples=["luckyizu"])
     password: str = Field(..., alias="密码", min_length=1, max_length=100, examples=["228460"])
 
-    @field_validator("username", "password", mode="before")
+    @field_validator("username", mode="before")
     @classmethod
-    def validate_required_text(cls, value: str) -> str:
+    def validate_username(cls, value: str) -> str:
         normalized = normalize_text(value)
         if not normalized:
-            raise ValueError("不能为空")
+            raise ValueError("用户名不能为空")
         return normalized
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        return normalize_password(value)
 
 
 class UserOut(AppOrmModel):
@@ -63,10 +78,7 @@ class PasswordChange(AppBaseModel):
     @field_validator("old_password", "new_password", mode="before")
     @classmethod
     def validate_password_text(cls, value: str) -> str:
-        normalized = normalize_text(value)
-        if not normalized:
-            raise ValueError("密码不能为空")
-        return normalized
+        return normalize_password(value)
 
 
 class DoctorCreate(AppBaseModel):
@@ -74,13 +86,18 @@ class DoctorCreate(AppBaseModel):
     password: str = Field(..., alias="初始密码", min_length=1, max_length=100)
     real_name: str | None = Field(None, alias="医生姓名", max_length=50)
 
-    @field_validator("username", "password", mode="before")
+    @field_validator("username", mode="before")
     @classmethod
     def validate_required_text(cls, value: str) -> str:
         normalized = normalize_text(value)
         if not normalized:
             raise ValueError("不能为空")
         return normalized
+
+    @field_validator("password", mode="before")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        return normalize_password(value)
 
     @field_validator("real_name", mode="before")
     @classmethod
@@ -112,10 +129,7 @@ class DoctorPasswordReset(AppBaseModel):
     @field_validator("password", mode="before")
     @classmethod
     def validate_password(cls, value: str) -> str:
-        normalized = normalize_text(value)
-        if not normalized:
-            raise ValueError("新密码不能为空")
-        return normalized
+        return normalize_password(value)
 
 
 class DoctorStatusUpdate(AppBaseModel):

@@ -19,9 +19,11 @@ from sqlalchemy.orm import Session, selectinload
 
 from app import models, schemas
 from app.database import get_db
+from app.security.config import get_token_expire_seconds, get_token_secret
+from app.security.password import hash_password, password_needs_rehash, verify_password
 
-TOKEN_EXPIRE_SECONDS = int(os.getenv("APP_TOKEN_EXPIRE_SECONDS", "43200"))
-TOKEN_SECRET = os.getenv("APP_TOKEN_SECRET", "smart-medical-demo-secret")
+TOKEN_EXPIRE_SECONDS = get_token_expire_seconds()
+TOKEN_SECRET = get_token_secret()
 TOKEN_ALGORITHM = "HS256"
 DASHSCOPE_BASE_URL = os.getenv("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 DASHSCOPE_MODEL = os.getenv("DASHSCOPE_MODEL", "qwen-plus")
@@ -797,16 +799,15 @@ def health_check(db: Session = Depends(get_db)):
 
 @app.post("/auth/login", response_model=schemas.LoginResponse, summary="医生/管理员登录", tags=["登录系统"])
 def login(login_data: schemas.LoginRequest, db: Session = Depends(get_db)):
-    user = (
-        db.query(models.User)
-        .filter(models.User.username == login_data.username)
-        .filter(models.User.password == login_data.password)
-        .first()
-    )
-    if not user:
+    user = db.query(models.User).filter(models.User.username == login_data.username).first()
+    if not user or not verify_password(login_data.password, user.password):
         raise_http_error(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
     if not user.is_active:
         raise_http_error(status.HTTP_403_FORBIDDEN, "该账号已被禁用，请联系管理员")
+
+    if password_needs_rehash(user.password):
+        user.password = hash_password(login_data.password)
+        db.commit()
 
     result = schemas.UserOut.model_validate(user).model_dump()
     result["token"] = create_access_token(user)
@@ -837,10 +838,19 @@ def change_password(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.password != password_data.old_password:
+    if not verify_password(password_data.old_password, current_user.password):
         raise_http_error(status.HTTP_400_BAD_REQUEST, "原密码错误")
-    current_user.password = password_data.new_password
+    current_user.password = hash_password(password_data.new_password)
     db.commit()
+    write_operation_log(
+        db,
+        current_user,
+        "修改密码",
+        "账号安全",
+        "用户",
+        current_user.id,
+        f"{current_user.username} 修改账号密码",
+    )
     return {"message": "密码修改成功"}
 
 
@@ -1548,7 +1558,7 @@ def create_doctor(
 
     db_doctor = models.User(
         username=doctor.username,
-        password=doctor.password,
+        password=hash_password(doctor.password),
         real_name=doctor.real_name,
         role="doctor",
         is_active=1,
@@ -1609,7 +1619,7 @@ def reset_doctor_password(
     db: Session = Depends(get_db),
 ):
     doctor = get_doctor_or_404(doctor_id, db)
-    doctor.password = payload.password
+    doctor.password = hash_password(payload.password)
     db.commit()
     write_operation_log(
         db,
