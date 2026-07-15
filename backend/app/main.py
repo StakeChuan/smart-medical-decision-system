@@ -4,7 +4,6 @@ import hashlib
 import hmac
 import io
 import json
-import os
 import time
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -12,12 +11,22 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from openai import APIConnectionError, APIError, APITimeoutError, OpenAI
 from sqlalchemy import and_, asc, desc, func, or_, text
 from sqlalchemy.orm import Query as SqlAlchemyQuery
 from sqlalchemy.orm import Session, selectinload
 
 from app import models, schemas
+from app.agent import (
+    AgentConfigurationError,
+    AgentConnectionError,
+    AgentResponseError,
+    AgentServiceError,
+    AgentTimeoutError,
+    AgentToolError,
+    ConsultationNotFoundError,
+    MedicalAgentError,
+    run_medical_agent,
+)
 from app.database import get_db
 from app.security.config import get_token_expire_seconds, get_token_secret
 from app.security.password import hash_password, password_needs_rehash, verify_password
@@ -25,9 +34,6 @@ from app.security.password import hash_password, password_needs_rehash, verify_p
 TOKEN_EXPIRE_SECONDS = get_token_expire_seconds()
 TOKEN_SECRET = get_token_secret()
 TOKEN_ALGORITHM = "HS256"
-DASHSCOPE_BASE_URL = os.getenv("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-DASHSCOPE_MODEL = os.getenv("DASHSCOPE_MODEL", "qwen-plus")
-DASHSCOPE_TIMEOUT = float(os.getenv("DASHSCOPE_TIMEOUT", "60"))
 security = HTTPBearer(auto_error=False)
 
 app = FastAPI(
@@ -514,220 +520,65 @@ def get_doctor_stats(
     return serialize_doctor_rows(rows)
 
 
-def get_dashscope_client() -> OpenAI:
-    api_key = os.getenv("DASHSCOPE_API_KEY", "").strip()
-    if not api_key:
-        raise_http_error(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "未配置阿里云大模型 API，请在 backend/.env 中设置 DASHSCOPE_API_KEY",
-        )
-    return OpenAI(
-        api_key=api_key,
-        base_url=DASHSCOPE_BASE_URL,
-        timeout=DASHSCOPE_TIMEOUT,
-    )
-
-
-def build_fallback_full_report(
-    patient_summary: str,
-    key_findings: str,
-    possible_diseases: str,
-    suggested_checks: str,
-    risk_level: str,
-    urgency_level: str,
-    treatment_advice: str,
-    follow_up_advice: str,
-    risk_warning: str,
+def format_agent_log_detail(
+    consultation_id: int,
+    patient_id: int,
+    started_at: datetime,
+    finished_at: datetime,
+    success: bool,
+    category: str,
 ) -> str:
+    duration_ms = max(0, int((finished_at - started_at).total_seconds() * 1000))
     return (
-        f"患者摘要：{patient_summary}\n"
-        f"关键发现：{key_findings}\n"
-        f"可能疾病：{possible_diseases}\n"
-        f"建议检查：{suggested_checks}\n"
-        f"风险等级：{risk_level}\n"
-        f"紧急程度：{urgency_level}\n"
-        f"辅助建议：{treatment_advice}\n"
-        f"复诊建议：{follow_up_advice}\n"
-        f"风险提示：{risk_warning}\n\n"
-        "声明：本系统输出仅供医生辅助参考，不能替代医生诊断。"
+        f"问诊ID {consultation_id}；患者ID {patient_id}；"
+        f"开始时间 {started_at.isoformat(timespec='seconds')}；"
+        f"结束时间 {finished_at.isoformat(timespec='seconds')}；"
+        f"耗时 {duration_ms}ms；成功 {str(success).lower()}；类别 {category}"
     )
 
 
-def parse_json_content(raw_content: str) -> dict[str, Any]:
-    content = raw_content.strip()
-    if content.startswith("```"):
-        content = content.strip("`")
-        if content.startswith("json"):
-            content = content[4:]
-        content = content.strip()
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        start = content.find("{")
-        end = content.rfind("}")
-        if start >= 0 and end > start:
-            return json.loads(content[start : end + 1])
-        raise
-
-
-def clean_report_value(value: Any, fallback: str = "") -> str:
-    if value is None:
-        return fallback
-    if isinstance(value, (list, tuple)):
-        return "；".join(str(item).strip() for item in value if str(item).strip()) or fallback
-    if isinstance(value, dict):
-        return json.dumps(value, ensure_ascii=False)
-    return str(value).strip() or fallback
-
-
-def normalize_report_payload(payload: dict[str, Any]) -> dict[str, str]:
-    structured_keys = [
-        "patient_summary",
-        "患者摘要",
-        "key_findings",
-        "关键发现",
-        "主要问题",
-        "possible_diseases",
-        "可能疾病",
-        "suggested_checks",
-        "建议检查",
-        "risk_level",
-        "风险等级",
-        "urgency_level",
-        "紧急程度",
-        "treatment_advice",
-        "辅助建议",
-        "处置建议",
-        "follow_up_advice",
-        "复诊建议",
-        "转诊建议",
-        "risk_warning",
-        "风险提示",
-    ]
-    has_structured_input = any(clean_report_value(payload.get(key)) for key in structured_keys)
-    patient_summary = clean_report_value(payload.get("patient_summary") or payload.get("患者摘要"), "请结合问诊信息完善患者摘要" if has_structured_input else "")
-    key_findings = clean_report_value(payload.get("key_findings") or payload.get("关键发现") or payload.get("主要问题"), "请结合主诉、症状和检查结果综合判断" if has_structured_input else "")
-    possible_diseases = clean_report_value(payload.get("possible_diseases") or payload.get("可能疾病"), "请结合临床信息进一步判断" if has_structured_input else "")
-    suggested_checks = clean_report_value(payload.get("suggested_checks") or payload.get("建议检查"), "建议结合常规检查完善判断" if has_structured_input else "")
-    risk_level = clean_report_value(payload.get("risk_level") or payload.get("风险等级"), "待评估" if has_structured_input else "")
-    urgency_level = clean_report_value(payload.get("urgency_level") or payload.get("紧急程度"), "常规" if has_structured_input else "")
-    treatment_advice = clean_report_value(payload.get("treatment_advice") or payload.get("辅助建议") or payload.get("处置建议"), "请结合医生判断进行个体化处理" if has_structured_input else "")
-    follow_up_advice = clean_report_value(payload.get("follow_up_advice") or payload.get("复诊建议") or payload.get("转诊建议"), "建议根据病情变化安排复诊或转诊" if has_structured_input else "")
-    risk_warning = clean_report_value(payload.get("risk_warning") or payload.get("风险提示"), "如症状持续加重，请及时线下就医" if has_structured_input else "")
-    full_report = clean_report_value(payload.get("full_report") or payload.get("完整报告"))
-
-    if not full_report:
-        full_report = build_fallback_full_report(
-            patient_summary,
-            key_findings,
-            possible_diseases,
-            suggested_checks,
-            risk_level,
-            urgency_level,
-            treatment_advice,
-            follow_up_advice,
-            risk_warning,
-        )
-
-    return {
-        "patient_summary": patient_summary,
-        "key_findings": key_findings,
-        "possible_diseases": possible_diseases,
-        "suggested_checks": suggested_checks,
-        "risk_level": risk_level,
-        "urgency_level": urgency_level,
-        "treatment_advice": treatment_advice,
-        "follow_up_advice": follow_up_advice,
-        "risk_warning": risk_warning,
-        "full_report": full_report,
-        "structured_summary": json.dumps(
-            {
-                "patient_summary": patient_summary,
-                "key_findings": key_findings,
-                "possible_diseases": possible_diseases,
-                "suggested_checks": suggested_checks,
-                "risk_level": risk_level,
-                "urgency_level": urgency_level,
-                "treatment_advice": treatment_advice,
-                "follow_up_advice": follow_up_advice,
-                "risk_warning": risk_warning,
-                "full_report": full_report,
-            },
-            ensure_ascii=False,
+def write_agent_operation_log(
+    db: Session,
+    current_user: models.User,
+    consultation_id: int,
+    patient_id: int,
+    started_at: datetime,
+    success: bool,
+    category: str,
+) -> None:
+    finished_at = datetime.now()
+    write_operation_log(
+        db,
+        current_user,
+        "完成" if success else "失败",
+        "AI Agent",
+        "问诊",
+        consultation_id,
+        format_agent_log_detail(
+            consultation_id,
+            patient_id,
+            started_at,
+            finished_at,
+            success,
+            category,
         ),
-    }
+    )
 
 
-def generate_ai_report_with_qwen(consultation: models.Consultation) -> dict[str, str]:
-    client = get_dashscope_client()
-    patient = consultation.patient
-    patient_name = patient.name if patient else "未填写"
-    patient_gender = patient.gender if patient and patient.gender else "未填写"
-    patient_age = f"{patient.age}岁" if patient and patient.age is not None else "未填写"
-    patient_medical_history = patient.medical_history if patient and patient.medical_history else "未填写"
-    patient_allergy_history = patient.allergy_history if patient and patient.allergy_history else "未填写"
-    prompt = f"""
-你是一名严谨的医疗辅助决策助手。请根据以下问诊信息，输出一个 JSON 对象。
-
-要求：
-1. 仅输出 JSON，不要输出 Markdown，不要输出额外解释。
-2. JSON 必须包含以下字段：
-   patient_summary
-   key_findings
-   possible_diseases
-   suggested_checks
-   risk_level
-   urgency_level
-   treatment_advice
-   follow_up_advice
-   risk_warning
-   full_report
-3. risk_level 只能为“低”“中”“高”或“待评估”；urgency_level 只能为“常规”“尽快”“紧急”。
-4. full_report 请整理为适合医生阅读的完整中文报告，内容包含患者摘要、关键发现、可能疾病、建议检查、处置建议、复诊/转诊建议和风险提示。
-5. 内容必须包含“仅供医生辅助参考，不能替代医生诊断”的含义。
-6. 必须严格使用患者基础信息中的性别和年龄，不要自行推断或改写患者性别。
-
-患者基础信息：
-姓名：{patient_name}
-性别：{patient_gender}
-年龄：{patient_age}
-既往病史：{patient_medical_history}
-过敏史：{patient_allergy_history}
-
-患者问诊信息：
-主诉：{consultation.chief_complaint or '未填写'}
-症状：{consultation.symptoms or '未填写'}
-现病史：{consultation.present_illness or '未填写'}
-既往史：{consultation.past_history or '未填写'}
-检查结果：{consultation.examination or '未填写'}
-""".strip()
-
-    try:
-        completion = client.chat.completions.create(
-            model=DASHSCOPE_MODEL,
-            messages=[
-                {"role": "system", "content": "你是一个严谨的医疗辅助决策助手。"},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.2,
-        )
-    except APITimeoutError:
+def raise_medical_agent_http_error(exc: MedicalAgentError) -> None:
+    if isinstance(exc, ConsultationNotFoundError):
+        raise_http_error(status.HTTP_404_NOT_FOUND, "问诊记录不存在")
+    if isinstance(exc, AgentConfigurationError):
+        raise_http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "AI 服务配置不完整，请联系管理员")
+    if isinstance(exc, AgentTimeoutError):
         raise_http_error(status.HTTP_504_GATEWAY_TIMEOUT, "阿里云大模型调用超时，请稍后重试")
-    except APIConnectionError:
-        raise_http_error(status.HTTP_502_BAD_GATEWAY, "无法连接阿里云大模型服务，请检查网络或接口地址")
-    except APIError as exc:
-        message = getattr(exc, "message", None) or str(exc)
-        raise_http_error(status.HTTP_502_BAD_GATEWAY, f"阿里云大模型调用失败：{message}")
-
-    content = completion.choices[0].message.content if completion.choices else ""
-    if not content:
-        raise_http_error(status.HTTP_502_BAD_GATEWAY, "阿里云大模型未返回有效内容")
-
-    try:
-        payload = parse_json_content(content)
-        return normalize_report_payload(payload)
-    except (json.JSONDecodeError, TypeError, ValueError):
-        return normalize_report_payload({"full_report": content})
+    if isinstance(exc, AgentConnectionError):
+        raise_http_error(status.HTTP_502_BAD_GATEWAY, "无法连接阿里云大模型服务，请稍后重试")
+    if isinstance(exc, (AgentServiceError, AgentResponseError)):
+        raise_http_error(status.HTTP_502_BAD_GATEWAY, "AI 辅助分析失败，请稍后重试")
+    if isinstance(exc, AgentToolError):
+        raise_http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "医疗上下文读取失败，请稍后重试")
+    raise_http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "AI 辅助分析失败，请稍后重试")
 
 
 def build_ai_report(consultation_id: int, db: Session, current_user: models.User, force: bool = False):
@@ -740,40 +591,89 @@ def build_ai_report(consultation_id: int, db: Session, current_user: models.User
     if consultation.ai_report and not force:
         return consultation.ai_report
 
-    report_payload = generate_ai_report_with_qwen(consultation)
-
-    if consultation.ai_report:
-        db_report = consultation.ai_report
-        db_report.patient_summary = report_payload["patient_summary"]
-        db_report.key_findings = report_payload["key_findings"]
-        db_report.possible_diseases = report_payload["possible_diseases"]
-        db_report.suggested_checks = report_payload["suggested_checks"]
-        db_report.risk_level = report_payload["risk_level"]
-        db_report.urgency_level = report_payload["urgency_level"]
-        db_report.treatment_advice = report_payload["treatment_advice"]
-        db_report.follow_up_advice = report_payload["follow_up_advice"]
-        db_report.risk_warning = report_payload["risk_warning"]
-        db_report.full_report = report_payload["full_report"]
-        db_report.structured_summary = report_payload["structured_summary"]
-        db_report.created_at = datetime.now()
-    else:
-        db_report = models.AiReport(
-            consultation_id=consultation.id,
-            patient_summary=report_payload["patient_summary"],
-            key_findings=report_payload["key_findings"],
-            possible_diseases=report_payload["possible_diseases"],
-            suggested_checks=report_payload["suggested_checks"],
-            risk_level=report_payload["risk_level"],
-            urgency_level=report_payload["urgency_level"],
-            treatment_advice=report_payload["treatment_advice"],
-            follow_up_advice=report_payload["follow_up_advice"],
-            risk_warning=report_payload["risk_warning"],
-            full_report=report_payload["full_report"],
-            structured_summary=report_payload["structured_summary"],
+    started_at = datetime.now()
+    try:
+        report_payload = run_medical_agent(consultation_id, db)
+    except MedicalAgentError as exc:
+        db.rollback()
+        write_agent_operation_log(
+            db,
+            current_user,
+            consultation.id,
+            consultation.patient_id,
+            started_at,
+            False,
+            exc.category,
         )
-        db.add(db_report)
-    db.commit()
-    db.refresh(db_report)
+        raise_medical_agent_http_error(exc)
+    except Exception:
+        db.rollback()
+        write_agent_operation_log(
+            db,
+            current_user,
+            consultation.id,
+            consultation.patient_id,
+            started_at,
+            False,
+            "unexpected_error",
+        )
+        raise_http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "AI 辅助分析失败，请稍后重试")
+
+    try:
+        if consultation.ai_report:
+            db_report = consultation.ai_report
+            db_report.patient_summary = report_payload.patient_summary
+            db_report.key_findings = report_payload.key_findings
+            db_report.possible_diseases = report_payload.possible_diseases
+            db_report.suggested_checks = report_payload.suggested_checks
+            db_report.risk_level = report_payload.risk_level
+            db_report.urgency_level = report_payload.urgency_level
+            db_report.treatment_advice = report_payload.treatment_advice
+            db_report.follow_up_advice = report_payload.follow_up_advice
+            db_report.risk_warning = report_payload.risk_warning
+            db_report.full_report = report_payload.full_report
+            db_report.structured_summary = report_payload.structured_summary
+            db_report.created_at = datetime.now()
+        else:
+            db_report = models.AiReport(
+                consultation_id=consultation.id,
+                patient_summary=report_payload.patient_summary,
+                key_findings=report_payload.key_findings,
+                possible_diseases=report_payload.possible_diseases,
+                suggested_checks=report_payload.suggested_checks,
+                risk_level=report_payload.risk_level,
+                urgency_level=report_payload.urgency_level,
+                treatment_advice=report_payload.treatment_advice,
+                follow_up_advice=report_payload.follow_up_advice,
+                risk_warning=report_payload.risk_warning,
+                full_report=report_payload.full_report,
+                structured_summary=report_payload.structured_summary,
+            )
+            db.add(db_report)
+        db.commit()
+        db.refresh(db_report)
+    except Exception:
+        db.rollback()
+        write_agent_operation_log(
+            db,
+            current_user,
+            consultation.id,
+            consultation.patient_id,
+            started_at,
+            False,
+            "persistence_error",
+        )
+        raise_http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "AI 报告保存失败，请稍后重试")
+
+    write_agent_operation_log(
+        db,
+        current_user,
+        consultation.id,
+        consultation.patient_id,
+        started_at,
+        True,
+        "success",
+    )
     write_operation_log(
         db,
         current_user,
