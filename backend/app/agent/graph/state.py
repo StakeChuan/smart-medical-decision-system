@@ -17,6 +17,7 @@ from app.agent.schemas import (
     AgentWorkflowError,
     ConsultationContext,
     ConsultationNotFoundError,
+    KnowledgeReportDraft,
     MedicalAgentError,
     MedicalReportPayload,
     PatientContext,
@@ -25,6 +26,8 @@ from app.agent.schemas import (
     RiskAssessment,
     RiskAssessmentResponseError,
 )
+from app.knowledge.schemas import KnowledgeRetrieval
+from app.knowledge.service import KnowledgeService
 
 
 class NodeTrace(TypedDict):
@@ -61,7 +64,13 @@ class MedicalAgentGraphState(TypedDict):
     patient_context: PatientContext | None
     consultation_context: ConsultationContext | None
     history_context: PatientHistoryContext | None
+    rag_enabled: bool
+    knowledge_retrieval: KnowledgeRetrieval | None
+    baseline_risk_assessment: RiskAssessment | None
+    knowledge_risk_assessment: RiskAssessment | None
+    knowledge_conflict: bool
     risk_assessment: RiskAssessment | None
+    report_draft: KnowledgeReportDraft | None
     medical_report: MedicalReportPayload | None
     error: GraphError | None
     current_step: str
@@ -72,19 +81,29 @@ class MedicalAgentGraphState(TypedDict):
 class MedicalAgentGraphContext:
     db: Session
     client: OpenAI | None = None
+    knowledge_service: KnowledgeService | None = None
 
 
 GraphRoute = Literal["continue", "error"]
 
 
-def create_initial_graph_state(consultation_id: int) -> MedicalAgentGraphState:
+def create_initial_graph_state(
+    consultation_id: int,
+    rag_enabled: bool = False,
+) -> MedicalAgentGraphState:
     return {
         "consultation_id": consultation_id,
         "patient_id": None,
         "patient_context": None,
         "consultation_context": None,
         "history_context": None,
+        "rag_enabled": rag_enabled,
+        "knowledge_retrieval": None,
+        "baseline_risk_assessment": None,
+        "knowledge_risk_assessment": None,
+        "knowledge_conflict": False,
         "risk_assessment": None,
+        "report_draft": None,
         "medical_report": None,
         "error": None,
         "current_step": "start",

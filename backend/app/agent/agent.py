@@ -12,11 +12,18 @@ from app.agent.tools import (
     get_dashscope_client,
     get_patient_history,
 )
-from app.security.config import get_medical_agent_engine
+from app.knowledge.service import load_knowledge_service
+from app.security.config import get_medical_agent_engine, get_medical_rag_settings
 
 
 MEDICAL_AGENT_ENGINE = get_medical_agent_engine()
+MEDICAL_RAG_SETTINGS = (
+    get_medical_rag_settings()
+    if MEDICAL_AGENT_ENGINE == "langgraph"
+    else get_medical_rag_settings({})
+)
 COMPILED_MEDICAL_AGENT_GRAPH = None
+KNOWLEDGE_SERVICE = None
 
 
 def _load_compiled_medical_agent_graph():
@@ -29,6 +36,11 @@ def _load_compiled_medical_agent_graph():
 
 if MEDICAL_AGENT_ENGINE == "langgraph":
     COMPILED_MEDICAL_AGENT_GRAPH = _load_compiled_medical_agent_graph()
+    if MEDICAL_RAG_SETTINGS.enabled:
+        try:
+            KNOWLEDGE_SERVICE = load_knowledge_service(MEDICAL_RAG_SETTINGS)
+        except Exception as exc:
+            raise RuntimeError("Medical knowledge index initialization failed") from exc
 
 
 def _run_medical_agent_legacy(
@@ -68,8 +80,15 @@ def _run_medical_agent_graph(
 
     try:
         result = COMPILED_MEDICAL_AGENT_GRAPH.invoke(
-            create_initial_graph_state(consultation_id),
-            context=MedicalAgentGraphContext(db=db, client=client),
+            create_initial_graph_state(
+                consultation_id,
+                rag_enabled=MEDICAL_RAG_SETTINGS.enabled,
+            ),
+            context=MedicalAgentGraphContext(
+                db=db,
+                client=client,
+                knowledge_service=KNOWLEDGE_SERVICE,
+            ),
         )
     except AgentWorkflowError:
         raise

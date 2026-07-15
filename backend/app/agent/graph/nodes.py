@@ -15,10 +15,32 @@ from app.agent.schemas import AgentWorkflowError, MedicalAgentError, MedicalRepo
 from app.agent.state import MedicalAgentState
 from app.agent.tools import (
     assess_medical_risk,
+    assess_medical_risk_with_knowledge,
+    finalize_knowledge_report,
     generate_medical_report,
+    generate_medical_report_draft,
     get_consultation_context,
     get_dashscope_client,
     get_patient_history,
+)
+from app.knowledge.errors import (
+    KnowledgeCitationError,
+    KnowledgeConfigurationError,
+    KnowledgeEmbeddingConnectionError,
+    KnowledgeEmbeddingServiceError,
+    KnowledgeEmbeddingTimeoutError,
+    KnowledgeError,
+)
+from app.knowledge.schemas import KnowledgeRetrieval
+from app.knowledge.service import build_clinical_query
+from app.agent.schemas import (
+    AgentConfigurationError,
+    AgentConnectionError,
+    AgentResponseError,
+    AgentServiceError,
+    AgentTimeoutError,
+    AgentToolError,
+    RiskAssessment,
 )
 
 
@@ -70,8 +92,27 @@ def _domain_state(state: MedicalAgentGraphState) -> MedicalAgentState:
         consultation_context=state.get("consultation_context"),
         patient_history=state.get("history_context"),
         risk_assessment=state.get("risk_assessment"),
+        baseline_risk_assessment=state.get("baseline_risk_assessment"),
+        knowledge_risk_assessment=state.get("knowledge_risk_assessment"),
+        knowledge_retrieval=state.get("knowledge_retrieval"),
+        knowledge_conflict=state.get("knowledge_conflict", False),
+        report_draft=state.get("report_draft"),
         final_report=state.get("medical_report"),
     )
+
+
+def _raise_agent_knowledge_error(exc: KnowledgeError) -> None:
+    if isinstance(exc, KnowledgeEmbeddingTimeoutError):
+        raise AgentTimeoutError("知识 Embedding 调用超时") from exc
+    if isinstance(exc, KnowledgeEmbeddingConnectionError):
+        raise AgentConnectionError("无法连接知识 Embedding 服务") from exc
+    if isinstance(exc, KnowledgeEmbeddingServiceError):
+        raise AgentServiceError("知识 Embedding 服务调用失败") from exc
+    if isinstance(exc, KnowledgeCitationError):
+        raise AgentResponseError("知识引用校验失败") from exc
+    if isinstance(exc, KnowledgeConfigurationError):
+        raise AgentConfigurationError("医学知识库配置无效") from exc
+    raise AgentToolError("医学知识检索失败") from exc
 
 
 def load_context_node(
@@ -154,7 +195,144 @@ def finalize_report_node(
             "consultation_context": None,
             "history_context": None,
             "risk_assessment": None,
+            "baseline_risk_assessment": None,
+            "knowledge_risk_assessment": None,
+            "knowledge_retrieval": None,
+            "report_draft": None,
+            "knowledge_conflict": False,
             "current_step": "completed",
         }
 
     return _run_node("finalize_report", operation)
+
+
+def retrieve_knowledge_node(
+    state: MedicalAgentGraphState,
+    runtime: Runtime[MedicalAgentGraphContext],
+) -> dict[str, Any]:
+    def operation() -> dict[str, Any]:
+        service = runtime.context.knowledge_service
+        patient = state.get("patient_context")
+        consultation = state.get("consultation_context")
+        if service is None or patient is None or consultation is None:
+            raise AgentConfigurationError("医学知识服务尚未加载")
+        query = build_clinical_query(
+            [
+                patient.medical_history,
+                patient.allergy_history,
+                consultation.chief_complaint,
+                consultation.symptoms,
+                consultation.present_illness,
+                consultation.past_history,
+                consultation.examination,
+            ]
+        )
+        try:
+            retrieval = service.retrieve(query)
+        except KnowledgeError as exc:
+            _raise_agent_knowledge_error(exc)
+            raise AssertionError("unreachable")
+        return {"knowledge_retrieval": retrieval, "current_step": "retrieve_knowledge"}
+
+    return _run_node("retrieve_knowledge", operation)
+
+
+def baseline_risk_node(
+    state: MedicalAgentGraphState,
+    runtime: Runtime[MedicalAgentGraphContext],
+) -> dict[str, Any]:
+    def operation() -> dict[str, Any]:
+        if runtime.context.client is None:
+            runtime.context.client = get_dashscope_client()
+        risk = assess_medical_risk(runtime.context.client, _domain_state(state))
+        return {"baseline_risk_assessment": risk, "current_step": "patient_only_risk"}
+
+    return _run_node("patient_only_risk", operation)
+
+
+def knowledge_risk_node(
+    state: MedicalAgentGraphState,
+    runtime: Runtime[MedicalAgentGraphContext],
+) -> dict[str, Any]:
+    def operation() -> dict[str, Any]:
+        retrieval = state.get("knowledge_retrieval")
+        if retrieval is None:
+            raise AgentWorkflowError("Medical Agent workflow is missing knowledge retrieval")
+        if not retrieval.matches:
+            return {"knowledge_risk_assessment": None, "current_step": "knowledge_assisted_risk"}
+        if runtime.context.client is None:
+            runtime.context.client = get_dashscope_client()
+        risk = assess_medical_risk_with_knowledge(runtime.context.client, _domain_state(state))
+        return {"knowledge_risk_assessment": risk, "current_step": "knowledge_assisted_risk"}
+
+    return _run_node("knowledge_assisted_risk", operation)
+
+
+def merge_risk_node(
+    state: MedicalAgentGraphState,
+    runtime: Runtime[MedicalAgentGraphContext],
+) -> dict[str, Any]:
+    del runtime
+
+    def operation() -> dict[str, Any]:
+        baseline = state.get("baseline_risk_assessment")
+        knowledge = state.get("knowledge_risk_assessment")
+        if baseline is None:
+            raise AgentWorkflowError("Medical Agent workflow is missing baseline risk")
+        if knowledge is None:
+            return {"risk_assessment": baseline, "knowledge_conflict": False, "current_step": "merge_risk"}
+        risk_rank = {"待评估": -1, "低": 0, "中": 1, "高": 2}
+        urgency_rank = {"常规": 0, "尽快": 1, "紧急": 2}
+        conflict = (
+            risk_rank[knowledge.risk_level] < risk_rank[baseline.risk_level]
+            or urgency_rank[knowledge.urgency] < urgency_rank[baseline.urgency]
+        )
+        chosen_risk = knowledge.risk_level if risk_rank[knowledge.risk_level] > risk_rank[baseline.risk_level] else baseline.risk_level
+        chosen_urgency = knowledge.urgency if urgency_rank[knowledge.urgency] > urgency_rank[baseline.urgency] else baseline.urgency
+        warning = knowledge.warning if (chosen_risk == knowledge.risk_level and chosen_urgency == knowledge.urgency and not conflict) else baseline.warning
+        if conflict:
+            warning = f"{warning.rstrip('。')}。患者资料与知识依据存在冲突，请由医生判断。"
+        merged = RiskAssessment(risk_level=chosen_risk, urgency=chosen_urgency, warning=warning)
+        return {"risk_assessment": merged, "knowledge_conflict": conflict, "current_step": "merge_risk"}
+
+    return _run_node("merge_risk", operation)
+
+
+def generate_report_draft_node(
+    state: MedicalAgentGraphState,
+    runtime: Runtime[MedicalAgentGraphContext],
+) -> dict[str, Any]:
+    def operation() -> dict[str, Any]:
+        if runtime.context.client is None:
+            runtime.context.client = get_dashscope_client()
+        draft = generate_medical_report_draft(runtime.context.client, _domain_state(state))
+        return {"report_draft": draft, "current_step": "generate_report_draft"}
+
+    return _run_node("generate_report_draft", operation)
+
+
+def validate_citations_node(
+    state: MedicalAgentGraphState,
+    runtime: Runtime[MedicalAgentGraphContext],
+) -> dict[str, Any]:
+    del runtime
+
+    def operation() -> dict[str, Any]:
+        draft = state.get("report_draft")
+        risk = state.get("risk_assessment")
+        retrieval = state.get("knowledge_retrieval") or KnowledgeRetrieval(matches=(), context_chars=0)
+        if draft is None or risk is None:
+            raise AgentWorkflowError("Medical Agent workflow is missing report draft or risk")
+        try:
+            report = finalize_knowledge_report(
+                draft,
+                risk,
+                retrieval,
+                state.get("knowledge_conflict", False),
+            )
+        except KnowledgeError as exc:
+            _raise_agent_knowledge_error(exc)
+            raise AssertionError("unreachable")
+        return {"medical_report": report, "current_step": "validate_citations"}
+
+    return _run_node("validate_citations", operation)

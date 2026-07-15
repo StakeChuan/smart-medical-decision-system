@@ -1,5 +1,5 @@
 import json
-import os
+import re
 from typing import Any
 
 from openai import APIConnectionError, APIError, APITimeoutError, OpenAI
@@ -11,6 +11,8 @@ from app.agent.prompts import (
     REPORT_SYSTEM_PROMPT,
     RISK_SYSTEM_PROMPT,
     build_medical_report_prompt,
+    build_knowledge_report_prompt,
+    build_knowledge_risk_prompt,
     build_risk_assessment_prompt,
 )
 from app.agent.schemas import (
@@ -25,6 +27,7 @@ from app.agent.schemas import (
     GeneratedMedicalReport,
     HistoricalConsultation,
     HistoricalReportSummary,
+    KnowledgeReportDraft,
     MedicalReportPayload,
     PatientContext,
     PatientHistoryContext,
@@ -33,30 +36,27 @@ from app.agent.schemas import (
     RiskAssessmentResponseError,
 )
 from app.agent.state import MedicalAgentState
-
-
-DEFAULT_DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-DEFAULT_DASHSCOPE_TIMEOUT = 60.0
+from app.integrations.dashscope import (
+    DashScopeConfigurationError,
+    get_dashscope_client as _get_dashscope_client,
+    get_dashscope_model as _get_dashscope_model,
+)
+from app.knowledge.errors import KnowledgeCitationError
+from app.knowledge.schemas import KnowledgeRetrieval
 
 
 def get_dashscope_model() -> str:
-    model = os.getenv("DASHSCOPE_MODEL", "").strip()
-    if not model:
-        raise AgentConfigurationError("未配置 DASHSCOPE_MODEL")
-    return model
+    try:
+        return _get_dashscope_model()
+    except DashScopeConfigurationError as exc:
+        raise AgentConfigurationError(str(exc)) from exc
 
 
 def get_dashscope_client() -> OpenAI:
-    api_key = os.getenv("DASHSCOPE_API_KEY", "").strip()
-    if not api_key:
-        raise AgentConfigurationError("未配置阿里云大模型 API")
-    base_url = os.getenv("DASHSCOPE_BASE_URL", DEFAULT_DASHSCOPE_BASE_URL).strip()
     try:
-        timeout = float(os.getenv("DASHSCOPE_TIMEOUT", str(DEFAULT_DASHSCOPE_TIMEOUT)))
-    except ValueError as exc:
-        raise AgentConfigurationError("DASHSCOPE_TIMEOUT 配置无效") from exc
-    return OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
-
+        return _get_dashscope_client()
+    except DashScopeConfigurationError as exc:
+        raise AgentConfigurationError(str(exc)) from exc
 
 def get_consultation_context(
     db: Session,
@@ -358,3 +358,99 @@ def generate_medical_report(client: OpenAI, state: MedicalAgentState) -> Medical
     final_values["risk_warning"] = state.risk_assessment.warning
     structured_summary = json.dumps(final_values, ensure_ascii=False)
     return MedicalReportPayload(**final_values, structured_summary=structured_summary)
+
+
+def assess_medical_risk_with_knowledge(
+    client: OpenAI,
+    state: MedicalAgentState,
+) -> RiskAssessment:
+    payload = _request_json_completion(
+        client,
+        RISK_SYSTEM_PROMPT,
+        build_knowledge_risk_prompt(state),
+        RiskAssessmentResponseError,
+    )
+    try:
+        return RiskAssessment.model_validate(_normalize_risk_payload(payload))
+    except ValidationError as exc:
+        raise RiskAssessmentResponseError("知识辅助风险评估结果字段无效") from exc
+
+
+def generate_medical_report_draft(
+    client: OpenAI,
+    state: MedicalAgentState,
+) -> KnowledgeReportDraft:
+    if state.risk_assessment is None:
+        raise AgentToolError("生成报告前缺少风险评估结果")
+    payload = _request_json_completion(
+        client,
+        REPORT_SYSTEM_PROMPT,
+        build_knowledge_report_prompt(state),
+        ReportResponseError,
+    )
+    normalized = _normalize_report_payload(payload)
+    reference_ids = payload.get("knowledge_reference_ids", [])
+    if not isinstance(reference_ids, list) or not all(isinstance(item, str) for item in reference_ids):
+        raise KnowledgeCitationError("模型返回的知识引用 ID 格式无效")
+    try:
+        return KnowledgeReportDraft.model_validate(
+            {**normalized, "knowledge_reference_ids": reference_ids}
+        )
+    except ValidationError as exc:
+        raise ReportResponseError("医疗报告草稿字段无效或不完整") from exc
+
+
+_FORBIDDEN_CITATION_CONTENT = re.compile(
+    r"知识依据|参考文献|参考资料|https?://|www\.|\[REF-[A-Za-z0-9-]+\]",
+    re.IGNORECASE,
+)
+NO_KNOWLEDGE_TEXT = "本次未检索到足够相关的知识条目。"
+KNOWLEDGE_CONFLICT_TEXT = "患者资料与知识依据存在冲突，请由医生判断。"
+
+
+def _render_citation(item: Any) -> str:
+    metadata = item.chunk.metadata
+    details = [
+        f"标题：{metadata.title}",
+        f"机构：{metadata.organization}",
+        f"版本：{metadata.version or '未提供'}",
+        f"日期：{metadata.published_at or '未提供'}",
+        f"章节：{item.chunk.section_path}",
+    ]
+    if metadata.source_url:
+        details.append(f"URL：{metadata.source_url}")
+    return f"{item.chunk.reference_id}\n" + "；".join(details)
+
+
+def finalize_knowledge_report(
+    draft: KnowledgeReportDraft,
+    risk: RiskAssessment,
+    retrieval: KnowledgeRetrieval,
+    conflict: bool,
+) -> MedicalReportPayload:
+    if _FORBIDDEN_CITATION_CONTENT.search(draft.full_report):
+        raise KnowledgeCitationError("报告草稿包含模型生成的来源或伪造引用")
+    allowed = set(retrieval.reference_ids)
+    requested = list(dict.fromkeys(item.strip() for item in draft.knowledge_reference_ids))
+    if any(item not in allowed for item in requested):
+        raise KnowledgeCitationError("报告草稿引用了本次检索之外的知识条目")
+    requested_set = set(requested)
+    selected = [item for item in retrieval.matches if item.chunk.reference_id in requested_set]
+
+    appendix_parts: list[str] = []
+    if conflict:
+        appendix_parts.append(KNOWLEDGE_CONFLICT_TEXT)
+    if retrieval.matches:
+        if selected:
+            appendix_parts.append("知识来源（由系统根据索引元数据生成）\n" + "\n\n".join(_render_citation(item) for item in selected))
+    else:
+        appendix_parts.append(NO_KNOWLEDGE_TEXT)
+
+    values = draft.model_dump(exclude={"knowledge_reference_ids"})
+    values["risk_level"] = risk.risk_level
+    values["urgency_level"] = risk.urgency
+    values["risk_warning"] = risk.warning
+    if appendix_parts:
+        values["full_report"] = values["full_report"].rstrip() + "\n\n" + "\n\n".join(appendix_parts)
+    structured_summary = json.dumps(values, ensure_ascii=False)
+    return MedicalReportPayload(**values, structured_summary=structured_summary)

@@ -6,7 +6,9 @@ from app.agent.schemas import (
     PatientContext,
     PatientHistoryContext,
     RiskAssessment,
+    KnowledgeReportDraft,
 )
+from app.knowledge.schemas import KnowledgeRetrieval
 
 
 class MedicalAgentState(BaseModel):
@@ -18,4 +20,9 @@ class MedicalAgentState(BaseModel):
     consultation_context: ConsultationContext | None = None
     patient_history: PatientHistoryContext | None = None
     risk_assessment: RiskAssessment | None = None
+    baseline_risk_assessment: RiskAssessment | None = None
+    knowledge_risk_assessment: RiskAssessment | None = None
+    knowledge_retrieval: KnowledgeRetrieval | None = None
+    knowledge_conflict: bool = False
+    report_draft: KnowledgeReportDraft | None = None
     final_report: MedicalReportPayload | None = None

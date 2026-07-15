@@ -87,6 +87,10 @@ class GeneratedMedicalReport(AgentBaseModel):
         return value
 
 
+class KnowledgeReportDraft(GeneratedMedicalReport):
+    knowledge_reference_ids: list[str] = Field(default_factory=list)
+
+
 class MedicalReportPayload(GeneratedMedicalReport):
     structured_summary: str = Field(min_length=1)
 

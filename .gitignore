@@ -2,6 +2,9 @@
 *.env
 __pycache__/
 *.pyc
+*.sqlite-wal
+*.sqlite-shm
+backend/knowledge_index/
 .venv/
 venv/
 node_modules/
